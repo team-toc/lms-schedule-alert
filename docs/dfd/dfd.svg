@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="840" viewBox="0 0 1600 840">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5 0 10z" fill="#1D1D1F"/></marker></defs>
+<rect width="1600" height="840" fill="#fff"/>
+<rect x="70" y="150" width="200" height="80" rx="8" fill="#1C1C1E"/>
+<text x="170.0" y="196.0" font-size="16" font-weight="750" fill="#fff" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">Canvas LMS</text>
+<rect x="70" y="520" width="200" height="80" rx="8" fill="#1C1C1E"/>
+<text x="170.0" y="566.0" font-size="16" font-weight="750" fill="#fff" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">캘린더 서비스</text>
+<rect x="1250" y="525" width="160" height="70" rx="8" fill="#1C1C1E"/>
+<text x="1330.0" y="566.0" font-size="16" font-weight="750" fill="#fff" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">사용자</text>
+<rect x="330" y="30" width="200" height="44" fill="#F2F2F7"/>
+<path d="M330 30h200M330 74h200M330 30v44" fill="none" stroke="#1D1D1F" stroke-width="2"/>
+<text x="350" y="58" font-size="13" font-weight="750" fill="#0062CC" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">D1</text>
+<text x="386" y="58" font-size="14.5" font-weight="650" fill="#1D1D1F" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">사용자 · 토큰</text>
+<rect x="540" y="350" width="200" height="44" fill="#F2F2F7"/>
+<path d="M540 350h200M540 394h200M540 350v44" fill="none" stroke="#1D1D1F" stroke-width="2"/>
+<text x="560" y="378" font-size="13" font-weight="750" fill="#0062CC" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">D2</text>
+<text x="596" y="378" font-size="14.5" font-weight="650" fill="#1D1D1F" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">공지 · 과제 저장본</text>
+<rect x="800" y="350" width="200" height="44" fill="#F2F2F7"/>
+<path d="M800 350h200M800 394h200M800 350v44" fill="none" stroke="#1D1D1F" stroke-width="2"/>
+<text x="820" y="378" font-size="13" font-weight="750" fill="#0062CC" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">D3</text>
+<text x="856" y="378" font-size="14.5" font-weight="650" fill="#1D1D1F" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">변경 이력</text>
+<rect x="1250" y="168" width="200" height="44" fill="#F2F2F7"/>
+<path d="M1250 168h200M1250 212h200M1250 168v44" fill="none" stroke="#1D1D1F" stroke-width="2"/>
+<path d="M1250 212L1264 168" stroke="#1D1D1F" stroke-width="2"/>
+<text x="1278" y="196" font-size="13" font-weight="750" fill="#0062CC" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">D4</text>
+<text x="1314" y="196" font-size="14.5" font-weight="650" fill="#1D1D1F" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">내 일정</text>
+<rect x="310" y="350" width="200" height="44" fill="#F2F2F7"/>
+<path d="M310 350h200M310 394h200M310 350v44" fill="none" stroke="#1D1D1F" stroke-width="2"/>
+<path d="M310 394L324 350" stroke="#1D1D1F" stroke-width="2"/>
+<text x="338" y="378" font-size="13" font-weight="750" fill="#0062CC" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">D4</text>
+<text x="374" y="378" font-size="14.5" font-weight="650" fill="#1D1D1F" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">내 일정</text>
+<rect x="820" y="700" width="200" height="44" fill="#F2F2F7"/>
+<path d="M820 700h200M820 744h200M820 700v44" fill="none" stroke="#1D1D1F" stroke-width="2"/>
+<text x="840" y="728" font-size="13" font-weight="750" fill="#0062CC" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">D5</text>
+<text x="876" y="728" font-size="14.5" font-weight="650" fill="#1D1D1F" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">알림 · 승인 기록</text>
+<circle cx="430" cy="190" r="66" fill="#E7F1FF" stroke="#007AFF" stroke-width="2.5"/>
+<text x="430" y="180" font-size="13" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">1.0</text>
+<text x="430" y="204" font-size="16" font-weight="750" fill="#1D1D1F" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">LMS 동기화</text>
+<circle cx="760" cy="190" r="66" fill="#E7F1FF" stroke="#007AFF" stroke-width="2.5"/>
+<text x="760" y="180" font-size="13" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">2.0</text>
+<text x="760" y="204" font-size="16" font-weight="750" fill="#1D1D1F" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">변경 감지</text>
+<circle cx="1090" cy="190" r="66" fill="#E7F1FF" stroke="#007AFF" stroke-width="2.5"/>
+<text x="1090" y="180" font-size="13" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">3.0</text>
+<text x="1090" y="204" font-size="16" font-weight="750" fill="#1D1D1F" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">겹침 판단</text>
+<circle cx="1090" cy="560" r="66" fill="#E7F1FF" stroke="#007AFF" stroke-width="2.5"/>
+<text x="1090" y="550" font-size="13" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">4.0</text>
+<text x="1090" y="574" font-size="16" font-weight="750" fill="#1D1D1F" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">알림 발송</text>
+<circle cx="760" cy="560" r="66" fill="#E7F1FF" stroke="#007AFF" stroke-width="2.5"/>
+<text x="760" y="550" font-size="13" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">5.0</text>
+<text x="760" y="574" font-size="16" font-weight="750" fill="#1D1D1F" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">승인 처리</text>
+<circle cx="430" cy="560" r="66" fill="#E7F1FF" stroke="#007AFF" stroke-width="2.5"/>
+<text x="430" y="550" font-size="13" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">6.0</text>
+<text x="430" y="574" font-size="16" font-weight="750" fill="#1D1D1F" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">캘린더 반영</text>
+<path d="M270 190L364.0 190.0" fill="none" stroke="#1D1D1F" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#ar)"/>
+<rect x="254.7" y="159" width="122.6" height="22" rx="11" fill="#fff"/>
+<text x="316" y="174" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">공지 · 과제 (API)</text>
+<path d="M430 74L430.0 124.0" fill="none" stroke="#1D1D1F" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#ar)"/>
+<rect x="448" y="93" width="32.4" height="22" rx="11" fill="#fff"/>
+<text x="456" y="108" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">토큰</text>
+<path d="M496.0 190.0L694.0 190.0" fill="none" stroke="#1D1D1F" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#ar)"/>
+<rect x="541.9" y="159" width="106.19999999999999" height="22" rx="11" fill="#fff"/>
+<text x="595" y="174" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">받아온 공지 · 과제</text>
+<path d="M826.0 190.0L1024.0 190.0" fill="none" stroke="#1D1D1F" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#ar)"/>
+<rect x="896.5" y="159" width="57.0" height="22" rx="11" fill="#fff"/>
+<text x="925" y="174" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">바뀐 항목</text>
+<path d="M1250 190L1156.0 190.0" fill="none" stroke="#1D1D1F" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#ar)"/>
+<rect x="1177.6" y="159" width="48.8" height="22" rx="11" fill="#fff"/>
+<text x="1202" y="174" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">내 일정</text>
+<path d="M760.0 256.0L760 300L640 300L640 350" fill="none" stroke="#1D1D1F" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#ar)" marker-start="url(#ar)"/>
+<rect x="636.9" y="317" width="106.19999999999999" height="22" rx="11" fill="#fff"/>
+<text x="690" y="332" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">저장본 비교 · 갱신</text>
+<path d="M760 300L900 300L900 350" fill="none" stroke="#1D1D1F" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#ar)"/>
+<rect x="801.5" y="317" width="57.0" height="22" rx="11" fill="#fff"/>
+<text x="830" y="332" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">변경 기록</text>
+<path d="M1090.0 256.0L1090.0 494.0" fill="none" stroke="#1D1D1F" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#ar)"/>
+<rect x="1096" y="365" width="98.0" height="22" rx="11" fill="#fff"/>
+<text x="1104" y="380" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">변경 + 겹침 여부</text>
+<path d="M1156.0 560.0L1250 560" fill="none" stroke="#1D1D1F" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#ar)"/>
+<rect x="1174.5" y="529" width="57.0" height="22" rx="11" fill="#fff"/>
+<text x="1203" y="544" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">푸시 알림</text>
+<path d="M1090.0 626.0L1090 722L1020 722" fill="none" stroke="#1D1D1F" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#ar)"/>
+<rect x="1096" y="665" width="57.0" height="22" rx="11" fill="#fff"/>
+<text x="1104" y="680" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">알림 저장</text>
+<path d="M1330 595L1330 790L760 790L760.0 626.0" fill="none" stroke="#1D1D1F" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#ar)"/>
+<rect x="1003.3" y="759" width="73.39999999999999" height="22" rx="11" fill="#fff"/>
+<text x="1040" y="774" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">승인 / 거절</text>
+<path d="M826.0 560.0L900 560L900 700" fill="none" stroke="#1D1D1F" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#ar)"/>
+<rect x="906" y="625" width="57.0" height="22" rx="11" fill="#fff"/>
+<text x="914" y="640" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">결정 기록</text>
+<path d="M694.0 560.0L496.0 560.0" fill="none" stroke="#1D1D1F" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#ar)"/>
+<rect x="562.4" y="529" width="65.19999999999999" height="22" rx="11" fill="#fff"/>
+<text x="595" y="544" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">승인된 일정</text>
+<path d="M364.0 560.0L270 560" fill="none" stroke="#1D1D1F" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#ar)"/>
+<rect x="319.5" y="529" width="57.0" height="22" rx="11" fill="#fff"/>
+<text x="348" y="544" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">일정 등록</text>
+<path d="M430.0 494.0L430 394" fill="none" stroke="#1D1D1F" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#ar)"/>
+<rect x="438" y="445" width="73.39999999999999" height="22" rx="11" fill="#fff"/>
+<text x="446" y="460" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">내 일정 갱신</text>
+<text x="70" y="826" font-size="13" font-weight="500" fill="#6E6E73" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">외부 → 처리(원) → 자료 저장소(D n). 같은 저장소가 두 번 나오면 왼쪽 빗금. 바뀐 일정은 사용자가 승인해야 캘린더에 반영. 1수준 초안.</text>
+</svg>
