@@ -1,4 +1,4 @@
-# 일정 변동 알림 (plan-ping)
+# 일정 변동 알림 (lms-schedule-alert)
 
 대학 이러닝 시스템(LMS)의 공지·과제·일정 변경을 받아와 내 캘린더에 반영하고, 바뀐 일정과 겹치는 일정을 알려 주는 앱.
 
@@ -22,7 +22,7 @@
 ## 폴더
 
 ```
-plan-ping/
+lms-schedule-alert/
 ├─ frontend/   React 앱
 ├─ backend/    Express API 서버
 └─ docs/       ERD · DFD · 회의록 · 설계 문서
@@ -31,8 +31,8 @@ plan-ping/
 ## 시작하기
 
 ```bash
-git clone https://github.com/team-toc/plan-ping.git
-cd plan-ping
+git clone https://github.com/team-toc/lms-schedule-alert.git
+cd lms-schedule-alert
 git checkout develop
 ```
 

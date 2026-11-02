@@ -1,6 +1,9 @@
 # 협업 규칙
 
-## 브랜치
+## 브랜치 (Git Flow 간소판)
+
+Git Flow에서 release·hotfix를 뺀 형태. 3명 팀이라 세 종류면 충분하다.
+
 
 | 브랜치 | 용도 | 규칙 |
 |---|---|---|
@@ -26,9 +29,9 @@ fix/notify-duplicate
 5. GitHub에서 `develop`으로 PR을 만든다. PR 템플릿의 칸을 채운다.
 6. 다른 팀원 1명이 확인(Approve)하면 합친다. 합친 뒤 작업 브랜치는 지운다.
 
-## 커밋 메시지
+## 커밋 메시지 (Conventional Commits)
 
-`종류: 내용` 형식. 내용은 한국어로 짧게.
+`종류: 내용` 형식(Conventional Commits 기준). 내용은 한국어로 짧게.
 
 | 종류 | 언제 |
 |---|---|
