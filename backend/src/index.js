@@ -1,17 +1,14 @@
 import 'dotenv/config'
-import express from 'express'
-import cors from 'cors'
+import { loadConfig } from './config.js'
+import { createLogger } from './logger.js'
+import { createPool } from './db/pool.js'
+import { createApp } from './app.js'
 
-const app = express()
-const PORT = process.env.PORT || 4000
+const config = loadConfig()
+const logger = createLogger({ level: config.logLevel })
+const pool = createPool(config.db)
+const app = createApp({ config, logger, pool })
 
-app.use(cors())
-app.use(express.json())
-
-app.get('/api/health', (req, res) => {
-  res.json({ ok: true, time: new Date().toISOString() })
-})
-
-app.listen(PORT, () => {
-  console.log(`backend: http://localhost:${PORT}`)
+app.listen(config.port, () => {
+  logger.info({ port: config.port }, 'backend started')
 })
