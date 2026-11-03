@@ -37,6 +37,29 @@ describe('설정 검증 (loadConfig)', () => {
     )
   })
 
+  it('기본값: 프록시 신뢰 끔, 세션 7일', () => {
+    const config = loadConfig(VALID_ENV)
+
+    assert.equal(config.trustProxy, false)
+    assert.equal(config.session.ttlMs, 7 * 24 * 60 * 60 * 1000)
+  })
+
+  it('TRUST_PROXY=true 이면 켜진다', () => {
+    assert.equal(loadConfig({ ...VALID_ENV, TRUST_PROXY: 'true' }).trustProxy, true)
+    assert.equal(loadConfig({ ...VALID_ENV, TRUST_PROXY: 'false' }).trustProxy, false)
+  })
+
+  it('TRUST_PROXY가 true/false가 아니면 실패한다', () => {
+    assert.throws(() => loadConfig({ ...VALID_ENV, TRUST_PROXY: 'yes' }), /TRUST_PROXY/)
+  })
+
+  it('SESSION_TTL_DAYS로 세션 기간을 바꿀 수 있고, 양의 정수가 아니면 실패한다', () => {
+    assert.equal(loadConfig({ ...VALID_ENV, SESSION_TTL_DAYS: '30' }).session.ttlMs, 30 * 24 * 60 * 60 * 1000)
+    for (const bad of ['0', '-1', '1.5', 'abc']) {
+      assert.throws(() => loadConfig({ ...VALID_ENV, SESSION_TTL_DAYS: bad }), /SESSION_TTL_DAYS/)
+    }
+  })
+
   it('빠진 키가 여러 개면 모두 알려 준다', () => {
     const { KAKAO_CLIENT_SECRET, SESSION_SECRET, ...rest } = VALID_ENV
 

@@ -59,7 +59,7 @@ describe('카카오 로그인 콜백', () => {
   })
 
   it('3. 같은 카카오 계정 콜백 2개 동시 실행 → 실제로 충돌하고, 계정 1개만 생성', async () => {
-    const userRepository = createRacingUserRepository(ctx.pool)
+    const userRepository = createRacingUserRepository(ctx.pool, { logger: ctx.silentLogger })
     const app = ctx.buildApp(createFakeKakaoClient(), { userRepository })
     const agents = [request.agent(app), request.agent(app)]
     const states = await Promise.all(agents.map(async (agent) => (await startLogin(agent)).state))

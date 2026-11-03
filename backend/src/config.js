@@ -13,8 +13,30 @@ const REQUIRED_KEYS = [
 ]
 const DEFAULT_PORT = 4000
 const MIN_SESSION_SECRET_LENGTH = 32
+const DEFAULT_SESSION_TTL_DAYS = 7
+const DAY_MS = 24 * 60 * 60 * 1000
+const BOOLEAN_VALUES = { true: true, false: false, '': false }
 
 export class ConfigError extends Error {}
+
+function parseBoolean(env, key) {
+  const value = BOOLEAN_VALUES[env[key] ?? '']
+  if (value === undefined) {
+    throw new ConfigError(`${key}는 true 또는 false여야 함`)
+  }
+  return value
+}
+
+function parseSessionTtlDays(env) {
+  if (!env.SESSION_TTL_DAYS) {
+    return DEFAULT_SESSION_TTL_DAYS
+  }
+  const days = Number(env.SESSION_TTL_DAYS)
+  if (!Number.isInteger(days) || days <= 0) {
+    throw new ConfigError('SESSION_TTL_DAYS는 1 이상의 정수여야 함')
+  }
+  return days
+}
 
 // 값은 메시지에 넣지 않는다. 빠진 키 이름만 알려 준다.
 export function loadConfig(env = process.env) {
@@ -26,13 +48,17 @@ export function loadConfig(env = process.env) {
     throw new ConfigError(`SESSION_SECRET은 ${MIN_SESSION_SECRET_LENGTH}자 이상이어야 함`)
   }
 
-  const isProduction = env.NODE_ENV === 'production'
   return {
     port: Number(env.PORT) || DEFAULT_PORT,
-    isProduction,
+    isProduction: env.NODE_ENV === 'production',
+    // nginx 같은 리버스 프록시 뒤일 때만 켠다 (X-Forwarded-Proto로 https 판단)
+    trustProxy: parseBoolean(env, 'TRUST_PROXY'),
     logLevel: env.LOG_LEVEL || 'info',
     frontendUrl: env.FRONTEND_URL,
-    sessionSecret: env.SESSION_SECRET,
+    session: {
+      secret: env.SESSION_SECRET,
+      ttlMs: parseSessionTtlDays(env) * DAY_MS,
+    },
     db: {
       host: env.DB_HOST,
       port: Number(env.DB_PORT),
