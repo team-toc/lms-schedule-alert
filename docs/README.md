@@ -4,7 +4,7 @@
 
 - `onboarding.md` 처음 시작하기 (설치 → clone → 실행 → PR)
 - `architecture.md` 시스템 아키텍처
-- `schedule.md` 개발 일정 (8주)
+- `schedule.md` 개발 일정 (5주 · 11/27 마감)
 - `screens.md` 화면 목록 · 기능
 
 - `erd/` 데이터베이스 ERD
