@@ -4,7 +4,7 @@ import { createKakaoClient, KakaoApiError } from '../src/kakao/kakao-client.js'
 
 const KAKAO_CONFIG = {
   restApiKey: 'fake-rest-api-key',
-  clientSecret: null,
+  clientSecret: 'fake-client-secret',
   redirectUri: 'http://backend.test/api/auth/kakao/callback',
 }
 
@@ -38,7 +38,7 @@ describe('카카오 클라이언트 (경계 레이어)', () => {
     assert.equal(url.searchParams.get('state'), 'state-123')
   })
 
-  it('토큰 교환: form으로 POST하고 access_token을 돌려준다 (client_secret 없으면 보내지 않음)', async () => {
+  it('토큰 교환: client_secret을 포함해 form으로 POST하고 access_token을 돌려준다', async () => {
     const { fetchFn, requests } = createFakeFetch(jsonResponse(200, { access_token: 'token-abc' }))
     const client = createKakaoClient({ config: KAKAO_CONFIG, fetchFn })
 
@@ -51,18 +51,18 @@ describe('카카오 클라이언트 (경계 레이어)', () => {
     const body = new URLSearchParams(String(req.body))
     assert.equal(body.get('grant_type'), 'authorization_code')
     assert.equal(body.get('client_id'), KAKAO_CONFIG.restApiKey)
+    assert.equal(body.get('client_secret'), KAKAO_CONFIG.clientSecret)
     assert.equal(body.get('redirect_uri'), KAKAO_CONFIG.redirectUri)
     assert.equal(body.get('code'), 'code-xyz')
-    assert.equal(body.has('client_secret'), false)
   })
 
-  it('토큰 교환: client_secret이 설정돼 있으면 함께 보낸다', async () => {
-    const { fetchFn, requests } = createFakeFetch(jsonResponse(200, { access_token: 'token-abc' }))
-    const client = createKakaoClient({ config: { ...KAKAO_CONFIG, clientSecret: 'secret-1' }, fetchFn })
+  it('토큰 교환: 실패해도 재시도하지 않는다 (인가 코드는 일회용)', async () => {
+    const { fetchFn, requests } = createFakeFetch(jsonResponse(500, {}))
+    const client = createKakaoClient({ config: KAKAO_CONFIG, fetchFn })
 
-    await client.exchangeCodeForToken('code-xyz')
+    await assert.rejects(client.exchangeCodeForToken('code-xyz'), KakaoApiError)
 
-    assert.equal(new URLSearchParams(String(requests[0].body)).get('client_secret'), 'secret-1')
+    assert.equal(requests.length, 1)
   })
 
   it('토큰 교환: 카카오가 4xx를 주면 KakaoApiError(token_exchange), 메시지에 code가 없다', async () => {

@@ -57,16 +57,15 @@ export function createKakaoClient({ config, fetchFn = globalThis.fetch }) {
     return url.toString()
   }
 
+  // 인가 코드는 일회용이라 실패해도 재시도하지 않는다
   async function exchangeCodeForToken(code) {
     const form = new URLSearchParams({
       grant_type: 'authorization_code',
       client_id: restApiKey,
+      client_secret: clientSecret,
       redirect_uri: redirectUri,
       code,
     })
-    if (clientSecret) {
-      form.set('client_secret', clientSecret)
-    }
     const body = await requestJson(fetchFn, 'token_exchange', TOKEN_URL, {
       method: 'POST',
       headers: { 'Content-Type': FORM_CONTENT_TYPE },

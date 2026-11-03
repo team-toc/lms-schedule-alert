@@ -7,6 +7,8 @@ const REQUIRED_KEYS = [
   'SESSION_SECRET',
   'FRONTEND_URL',
   'KAKAO_REST_API_KEY',
+  // 카카오 콘솔에서 기본 활성화. 없으면 실제 토큰 교환이 실패한다
+  'KAKAO_CLIENT_SECRET',
   'KAKAO_REDIRECT_URI',
 ]
 const DEFAULT_PORT = 4000
@@ -40,7 +42,7 @@ export function loadConfig(env = process.env) {
     },
     kakao: {
       restApiKey: env.KAKAO_REST_API_KEY,
-      clientSecret: env.KAKAO_CLIENT_SECRET || null,
+      clientSecret: env.KAKAO_CLIENT_SECRET,
       redirectUri: env.KAKAO_REDIRECT_URI,
     },
   }
