@@ -1,10 +1,94 @@
 import { describe, it, before, beforeEach, after } from 'node:test'
 import assert from 'node:assert/strict'
+import pino from 'pino'
 import { openTestDb } from './helpers/test-db.js'
 import { createUserRepository, DuplicateIdentityError } from '../src/accounts/user-repository.js'
 import { createAccountService, DISPLAY_NAME_MAX_LENGTH } from '../src/accounts/account-service.js'
 
 const IDENTITY = { provider: 'kakao', providerUserId: '4000000001', displayName: '테스트사용자' }
+const silentLogger = pino({ level: 'silent' })
+
+function createCapturingLogger() {
+  const entries = []
+  const logger = pino({ level: 'trace' }, { write: (line) => entries.push(JSON.parse(line)) })
+  return { logger, entries }
+}
+
+// INSERT에서 originalError, 롤백에서 rollbackError를 던지는 가짜 연결 · 풀
+function createPoolWithBrokenRollback({ originalError, rollbackError }) {
+  const connection = {
+    released: 0,
+    destroyed: 0,
+    beginTransaction: async () => {},
+    execute: async () => {
+      throw originalError
+    },
+    commit: async () => {},
+    rollback: async () => {
+      throw rollbackError
+    },
+    release() {
+      this.released += 1
+    },
+    destroy() {
+      this.destroyed += 1
+    },
+  }
+  return { connection, pool: { getConnection: async () => connection } }
+}
+
+describe('사용자 저장소: 롤백 실패 처리 (가짜 연결)', () => {
+  const originalError = Object.assign(new Error('Deadlock found'), { code: 'ER_LOCK_DEADLOCK', errno: 1213 })
+  const rollbackError = Object.assign(new Error('Connection lost: The server closed the connection.'), {
+    code: 'PROTOCOL_CONNECTION_LOST',
+  })
+
+  it('a) 롤백이 실패해도 원래 에러를 올린다', async () => {
+    const { pool } = createPoolWithBrokenRollback({ originalError, rollbackError })
+    const repo = createUserRepository(pool, { logger: silentLogger })
+
+    await assert.rejects(repo.createUserWithIdentity(IDENTITY), (err) => err === originalError)
+  })
+
+  it('a-1) 원래 에러가 중복 키면 롤백이 실패해도 DuplicateIdentityError(원인 = 원래 에러)', async () => {
+    const duplicate = Object.assign(new Error('Duplicate entry'), { code: 'ER_DUP_ENTRY', errno: 1062 })
+    const { pool } = createPoolWithBrokenRollback({ originalError: duplicate, rollbackError })
+    const repo = createUserRepository(pool, { logger: silentLogger })
+
+    await assert.rejects(repo.createUserWithIdentity(IDENTITY), (err) => {
+      assert.ok(err instanceof DuplicateIdentityError)
+      assert.equal(err.cause, duplicate)
+      return true
+    })
+  })
+
+  it('b) 롤백이 실패한 연결은 destroy하고 release하지 않는다', async () => {
+    const { pool, connection } = createPoolWithBrokenRollback({ originalError, rollbackError })
+    const repo = createUserRepository(pool, { logger: silentLogger })
+
+    await assert.rejects(repo.createUserWithIdentity(IDENTITY))
+
+    assert.equal(connection.destroyed, 1)
+    assert.equal(connection.released, 0)
+  })
+
+  it('c) 롤백 에러를 구조화 로그로 남기고, 입력값(닉네임 · 제공자 id)은 남기지 않는다', async () => {
+    const { pool } = createPoolWithBrokenRollback({ originalError, rollbackError })
+    const capture = createCapturingLogger()
+    const repo = createUserRepository(pool, { logger: capture.logger })
+
+    await assert.rejects(repo.createUserWithIdentity(IDENTITY))
+
+    const entry = capture.entries.find((e) => e.event === 'transaction_rollback_failed')
+    assert.ok(entry, '롤백 실패 로그가 있어야 함')
+    assert.equal(entry.level, 50)
+    assert.equal(entry.rollbackError.code, 'PROTOCOL_CONNECTION_LOST')
+    assert.equal(entry.originalError.code, 'ER_LOCK_DEADLOCK')
+    const text = JSON.stringify(capture.entries)
+    assert.ok(!text.includes(IDENTITY.displayName))
+    assert.ok(!text.includes(IDENTITY.providerUserId))
+  })
+})
 
 describe('MariaDB 사용자 저장소', () => {
   let db
@@ -12,7 +96,7 @@ describe('MariaDB 사용자 저장소', () => {
 
   before(async () => {
     db = await openTestDb()
-    repo = createUserRepository(db.pool)
+    repo = createUserRepository(db.pool, { logger: silentLogger })
   })
   beforeEach(async () => {
     await db.resetDatabase()
