@@ -7,6 +7,7 @@ const KAKAO_IDENTITY = { provider: 'kakao', providerUserId: '4000000001', displa
 
 // DB 없이 계정 로직만 확인하는 메모리 저장소.
 // loseRaceOnce: 처음 생성 시도에서 "다른 요청이 먼저 만들었다" 상황을 흉내 낸다.
+// 실제 격리 수준(REPEATABLE READ) 문제는 메모리로 재현되지 않으므로 auth-login 3번 DB 테스트가 맡는다.
 function createMemoryUserRepository({ loseRaceOnce = false } = {}) {
   const users = []
   const identities = []
@@ -84,9 +85,9 @@ describe('계정 조회 · 생성 (accountService.loginWithIdentity)', () => {
     assert.equal(user.displayName, DEFAULT_DISPLAY_NAME)
   })
 
-  it('findActiveUser: 없는 사용자 id면 null', async () => {
+  it('findUserById: 없는 사용자 id면 null', async () => {
     const service = createAccountService({ userRepository: createMemoryUserRepository() })
 
-    assert.equal(await service.findActiveUser(999), null)
+    assert.equal(await service.findUserById(999), null)
   })
 })

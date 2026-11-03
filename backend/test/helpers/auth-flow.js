@@ -1,6 +1,22 @@
 import assert from 'node:assert/strict'
+import { FRONTEND_URL } from './test-context.js'
 
 export const SESSION_COOKIE_NAME = 'sid'
+export const LOGIN_ERROR_URL = `${FRONTEND_URL}/login/error`
+
+// 콜백 실패는 프론트 에러 경로로 302, 쿼리에는 error 코드 하나만
+export function assertLoginErrorRedirect(res, errorCode) {
+  assert.equal(res.status, 302)
+  const location = new URL(res.headers.location)
+  assert.equal(location.origin + location.pathname, LOGIN_ERROR_URL)
+  assert.deepEqual([...location.searchParams], [['error', errorCode]])
+}
+
+// 서명된 쿠키 "sid=s%3A<세션ID>.<서명>"에서 세션 ID만 꺼낸다
+export function sessionIdFrom(cookie) {
+  const value = decodeURIComponent(cookie.split('=')[1])
+  return value.slice(2, value.lastIndexOf('.'))
+}
 
 // Set-Cookie 헤더에서 세션 쿠키만 "sid=..." 형태로 꺼낸다
 export function sessionCookieFrom(res) {
