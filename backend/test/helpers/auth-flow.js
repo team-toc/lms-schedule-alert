@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { FRONTEND_URL } from './test-context.js'
+import { FRONTEND_URL } from './test-db.js'
 
 export const SESSION_COOKIE_NAME = 'sid'
 export const LOGIN_ERROR_URL = `${FRONTEND_URL}/login/error`
