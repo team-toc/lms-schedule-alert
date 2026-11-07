@@ -10,7 +10,7 @@ const HTTP_INTERNAL_ERROR = 500
 const TRUSTED_PROXY_HOPS = 1
 
 // CORS는 열지 않는다. 프론트는 같은 출처(운영: nginx, 개발: Vite 프록시)로 /api를 호출한다.
-export function createApp({ config, logger, pool, kakaoClient, sessionStore, userRepository }) {
+export function createApp({ config, logger, pool, kakaoClient, googleClient, sessionStore, userRepository }) {
   const app = express()
   if (config.trustProxy) {
     // X-Forwarded-Proto를 믿어 req.secure를 판단해야 프록시 뒤에서 Secure 쿠키가 발급된다
@@ -28,7 +28,7 @@ export function createApp({ config, logger, pool, kakaoClient, sessionStore, use
   app.get('/api/health', (req, res) => {
     res.json({ ok: true, time: new Date().toISOString() })
   })
-  app.use('/api/auth', createAuthRouter({ config, kakaoClient, accountService }))
+  app.use('/api/auth', createAuthRouter({ config, kakaoClient, googleClient, accountService }))
 
   app.use(handleUnexpectedError)
   return app

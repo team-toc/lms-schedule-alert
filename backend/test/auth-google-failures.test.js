@@ -15,6 +15,7 @@ import {
 } from './helpers/fake-google.js'
 import { sessionCookieFrom, sessionIdFrom, assertLoginErrorRedirect } from './helpers/auth-flow.js'
 import { startGoogleLogin, googleCallback } from './helpers/google-flow.js'
+import { readOurSessionData } from './helpers/session-data.js'
 import { createGoogleClient } from '../src/google/google-client.js'
 
 const SENSITIVE_CODE = 'google-auth-code-MUST-NOT-LEAK'
@@ -67,6 +68,52 @@ describe('Google 콜백 실패 경로', () => {
       await agent.get('/api/auth/me').expect(401)
     })
   }
+
+  describe('실패로 끝난 콜백도 state · nonce를 세션 저장소에서 지운다', () => {
+    it('로그인 시작 후 세션에는 googleOAuth { state, nonce } 하나만 있다', async () => {
+      const { res, state, nonce } = await startGoogleLogin(request.agent(buildApp()))
+
+      assert.deepEqual(await readOurSessionData(ctx.pool, sessionCookieFrom(res)), { googleOAuth: { state, nonce } })
+    })
+
+    it('a) Google API 실패 뒤 같은 state로 다시 콜백 → invalid_state, 토큰 요청은 처음 1번뿐', async () => {
+      const agent = request.agent(buildApp())
+      const { res: startRes, state } = await startGoogleLogin(agent)
+      endpoint.respond('code', () => jsonResponse(400, { error: 'invalid_grant' }))
+
+      assertLoginErrorRedirect(await googleCallback(agent, { code: 'code', state }), 'google_api_failed')
+      assert.deepEqual(await readOurSessionData(ctx.pool, sessionCookieFrom(startRes)), {})
+
+      assertLoginErrorRedirect(await googleCallback(agent, { code: 'code', state }), 'invalid_state')
+      assert.equal(endpoint.requests.length, 1)
+    })
+
+    it('b) 동의 취소(?error=) 뒤 같은 state로 다시 콜백 → invalid_state, 토큰 요청 안 함', async () => {
+      const agent = request.agent(buildApp())
+      const { res: startRes, state } = await startGoogleLogin(agent)
+      const denied = await agent.get('/api/auth/google/callback').query({ error: 'access_denied', state })
+      assertLoginErrorRedirect(denied, 'google_login_denied')
+      assert.deepEqual(await readOurSessionData(ctx.pool, sessionCookieFrom(startRes)), {})
+
+      assertLoginErrorRedirect(await googleCallback(agent, { state }), 'invalid_state')
+      assert.equal(endpoint.requests.length, 0)
+    })
+
+    it('c) 실패로 끝난 로그인의 nonce는 다음 로그인에서 쓸 수 없다', async () => {
+      const agent = request.agent(buildApp())
+      const first = await startGoogleLogin(agent)
+      endpoint.respond('first-code', () => jsonResponse(400, { error: 'invalid_grant' }))
+      assertLoginErrorRedirect(await googleCallback(agent, { code: 'first-code', state: first.state }), 'google_api_failed')
+      const second = await startGoogleLogin(agent)
+      endpoint.issueIdToken('second-code', idTokenClaims({ nonce: first.nonce }))
+
+      const res = await googleCallback(agent, { code: 'second-code', state: second.state })
+
+      assertLoginErrorRedirect(res, 'google_api_failed')
+      assert.notEqual(second.nonce, first.nonce)
+      assert.equal(await ctx.countRows('users'), 0)
+    })
+  })
 
   it('state는 맞지만 code가 없음 → invalid_request, 토큰 요청 안 함', async () => {
     const agent = request.agent(buildApp())

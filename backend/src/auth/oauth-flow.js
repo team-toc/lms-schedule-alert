@@ -67,8 +67,9 @@ async function fetchProfileOrFailure(provider, { code, nonce }) {
 }
 
 function redirectToLoginError({ req, res, config, provider }, errorCode, details = {}) {
+  // 공통 필드가 제공자별 상세(details)에 덮이지 않도록 details를 먼저 펼친다
   req.log.warn(
-    { event: 'login_failed', provider: provider.name, reason: errorCode, ...details },
+    { ...details, event: 'login_failed', provider: provider.name, reason: errorCode },
     `${provider.name} login failed`,
   )
   const url = new URL(LOGIN_ERROR_PATH, config.frontendUrl)

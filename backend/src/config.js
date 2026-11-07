@@ -10,6 +10,9 @@ const REQUIRED_KEYS = [
   // 카카오 콘솔에서 기본 활성화. 없으면 실제 토큰 교환이 실패한다
   'KAKAO_CLIENT_SECRET',
   'KAKAO_REDIRECT_URI',
+  'GOOGLE_CLIENT_ID',
+  'GOOGLE_CLIENT_SECRET',
+  'GOOGLE_REDIRECT_URI',
 ]
 const DEFAULT_PORT = 4000
 const MIN_SESSION_SECRET_LENGTH = 32
@@ -70,6 +73,11 @@ export function loadConfig(env = process.env) {
       restApiKey: env.KAKAO_REST_API_KEY,
       clientSecret: env.KAKAO_CLIENT_SECRET,
       redirectUri: env.KAKAO_REDIRECT_URI,
+    },
+    google: {
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
+      redirectUri: env.GOOGLE_REDIRECT_URI,
     },
   }
 }

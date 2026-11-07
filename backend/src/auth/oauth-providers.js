@@ -1,4 +1,5 @@
 import { KakaoApiError } from '../kakao/kakao-client.js'
+import { GoogleApiError } from '../google/google-client.js'
 
 // 공통 OAuth 흐름(oauth-flow.js)에 넘기는 제공자 정보 (ADR 0006).
 // sessionKey: 로그인 시도를 저장할 세션 키. 제공자마다 달라서 다른 제공자의 state로는 콜백을 통과할 수 없다.
@@ -18,5 +19,20 @@ export function createKakaoProvider(kakaoClient) {
     isApiError: (err) => err instanceof KakaoApiError,
     describeFailure: (err) => ({ stage: err.stage, status: err.status, kakaoErrorCode: err.kakaoErrorCode }),
     errors: { denied: 'kakao_login_denied', apiFailed: 'kakao_api_failed' },
+  }
+}
+
+export function createGoogleProvider(googleClient) {
+  return {
+    name: 'google',
+    // nonce가 필요해 { state, nonce } 객체로 저장한다 (카카오와 모양이 다른 것은 의도)
+    sessionKey: 'googleOAuth',
+    usesNonce: true,
+    buildAuthorizeUrl: ({ state, nonce }) => googleClient.buildAuthorizeUrl({ state, nonce }),
+    // 토큰은 클라이언트 안에서 id_token 확인에만 쓰고 여기까지 오지 않는다
+    fetchProfile: ({ code, nonce }) => googleClient.exchangeCodeForProfile(code, { nonce }),
+    isApiError: (err) => err instanceof GoogleApiError,
+    describeFailure: (err) => ({ stage: err.stage, status: err.status, googleError: err.googleError, failureReason: err.reason }),
+    errors: { denied: 'google_login_denied', apiFailed: 'google_api_failed' },
   }
 }

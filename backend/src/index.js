@@ -4,6 +4,7 @@ import { createLogger } from './logger.js'
 import { createPool } from './db/pool.js'
 import { createSessionStore } from './session.js'
 import { createKakaoClient } from './kakao/kakao-client.js'
+import { createGoogleClient } from './google/google-client.js'
 import { createApp } from './app.js'
 
 function loadConfigOrExit() {
@@ -28,7 +29,8 @@ if (config.isProduction && !config.trustProxy) {
 const pool = createPool(config.db)
 const sessionStore = createSessionStore(pool, { ttlMs: config.session.ttlMs })
 const kakaoClient = createKakaoClient({ config: config.kakao })
-const app = createApp({ config, logger, pool, kakaoClient, sessionStore })
+const googleClient = createGoogleClient({ config: config.google })
+const app = createApp({ config, logger, pool, kakaoClient, googleClient, sessionStore })
 
 app.listen(config.port, () => {
   logger.info({ port: config.port, trustProxy: config.trustProxy }, 'backend started')
