@@ -6,6 +6,13 @@ import { createMigrator } from '../../src/db/migrator.js'
 export const FRONTEND_URL = 'http://frontend.test'
 // 로그에 새면 안 되는 값. 로그 검사 테스트에서 찾아본다.
 export const TEST_CLIENT_SECRET = 'fake-client-secret-MUST-NOT-LEAK'
+export const TEST_GOOGLE_CLIENT_SECRET = 'fake-google-client-secret-MUST-NOT-LEAK'
+// Google 클라이언트를 테스트에서 직접 만들 때 쓰는 설정 (config.google과 같은 모양)
+export const GOOGLE_TEST_CONFIG = {
+  clientId: 'fake-google-client-id.apps.googleusercontent.com',
+  clientSecret: TEST_GOOGLE_CLIENT_SECRET,
+  redirectUri: 'http://backend.test/api/auth/google/callback',
+}
 const TEST_DB_SUFFIX = '_test'
 // 자식 → 부모 순서로 비워야 외래키에 걸리지 않는다
 const TABLES_TO_RESET = ['auth_identities', 'users', 'sessions']
@@ -24,6 +31,9 @@ export function buildTestConfig() {
     KAKAO_REST_API_KEY: 'fake-rest-api-key',
     KAKAO_CLIENT_SECRET: TEST_CLIENT_SECRET,
     KAKAO_REDIRECT_URI: 'http://backend.test/api/auth/kakao/callback',
+    GOOGLE_CLIENT_ID: GOOGLE_TEST_CONFIG.clientId,
+    GOOGLE_CLIENT_SECRET: GOOGLE_TEST_CONFIG.clientSecret,
+    GOOGLE_REDIRECT_URI: GOOGLE_TEST_CONFIG.redirectUri,
   })
 }
 

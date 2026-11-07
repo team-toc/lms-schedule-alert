@@ -13,6 +13,26 @@ const VALID_ENV = {
   KAKAO_REST_API_KEY: 'rest-key-MUST-NOT-PRINT',
   KAKAO_CLIENT_SECRET: 'client-secret-MUST-NOT-PRINT',
   KAKAO_REDIRECT_URI: 'http://backend.test/api/auth/kakao/callback',
+  GOOGLE_CLIENT_ID: 'google-client-id-MUST-NOT-PRINT',
+  GOOGLE_CLIENT_SECRET: 'google-client-secret-MUST-NOT-PRINT',
+  GOOGLE_REDIRECT_URI: 'http://backend.test/api/auth/google/callback',
+}
+const GOOGLE_KEYS = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_REDIRECT_URI']
+
+function assertConfigErrorNamesOnly(env, expectedKeys) {
+  assert.throws(
+    () => loadConfig(env),
+    (err) => {
+      assert.ok(err instanceof ConfigError)
+      for (const key of expectedKeys) {
+        assert.match(err.message, new RegExp(key))
+      }
+      for (const value of Object.values(VALID_ENV)) {
+        assert.ok(!err.message.includes(value), '에러 메시지에 설정 값이 들어가면 안 됨')
+      }
+      return true
+    },
+  )
 }
 
 describe('설정 검증 (loadConfig)', () => {
@@ -35,6 +55,27 @@ describe('설정 검증 (loadConfig)', () => {
         return true
       },
     )
+  })
+
+  it('Google 설정을 config.google로 돌려준다', () => {
+    assert.deepEqual(loadConfig(VALID_ENV).google, {
+      clientId: VALID_ENV.GOOGLE_CLIENT_ID,
+      clientSecret: VALID_ENV.GOOGLE_CLIENT_SECRET,
+      redirectUri: VALID_ENV.GOOGLE_REDIRECT_URI,
+    })
+  })
+
+  for (const key of GOOGLE_KEYS) {
+    it(`10. ${key}가 비어 있으면 키 이름만 알려 주고 실패한다`, () => {
+      assertConfigErrorNamesOnly({ ...VALID_ENV, [key]: '' }, [key])
+    })
+  }
+
+  it('10. GOOGLE_* 세 개가 모두 없으면 세 키 이름을 모두 알려 준다', () => {
+    const env = { ...VALID_ENV }
+    GOOGLE_KEYS.forEach((key) => delete env[key])
+
+    assertConfigErrorNamesOnly(env, GOOGLE_KEYS)
   })
 
   it('기본값: 프록시 신뢰 끔, 세션 7일', () => {
