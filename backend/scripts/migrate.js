@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { loadConfig } from '../src/config.js'
+import { loadConfigOrExit } from '../src/config.js'
 import { createLogger } from '../src/logger.js'
 import { createPool } from '../src/db/pool.js'
 import { createMigrator } from '../src/db/migrator.js'
@@ -21,7 +21,7 @@ if (!COMMANDS[command]) {
   process.exit(1)
 }
 
-const config = loadConfig()
+const config = loadConfigOrExit()
 const logger = createLogger({ level: config.logLevel })
 const pool = createPool(config.db)
 try {

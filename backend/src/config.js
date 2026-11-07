@@ -81,3 +81,16 @@ export function loadConfig(env = process.env) {
     },
   }
 }
+
+// 실행 진입점(서버 · 마이그레이션)용. 설정 오류면 메시지 한 줄(키 이름만, 값 없음)만 출력하고 종료한다.
+export function loadConfigOrExit(env = process.env) {
+  try {
+    return loadConfig(env)
+  } catch (err) {
+    if (!(err instanceof ConfigError)) {
+      throw err
+    }
+    console.error(`설정 오류: ${err.message}`)
+    process.exit(1)
+  }
+}

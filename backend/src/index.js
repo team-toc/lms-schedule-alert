@@ -1,24 +1,11 @@
 import 'dotenv/config'
-import { loadConfig, ConfigError } from './config.js'
+import { loadConfigOrExit } from './config.js'
 import { createLogger } from './logger.js'
 import { createPool } from './db/pool.js'
 import { createSessionStore } from './session.js'
 import { createKakaoClient } from './kakao/kakao-client.js'
 import { createGoogleClient } from './google/google-client.js'
 import { createApp } from './app.js'
-
-function loadConfigOrExit() {
-  try {
-    return loadConfig()
-  } catch (err) {
-    if (!(err instanceof ConfigError)) {
-      throw err
-    }
-    // 메시지에는 키 이름만 있고 값은 없다
-    console.error(`설정 오류: ${err.message}`)
-    process.exit(1)
-  }
-}
 
 const config = loadConfigOrExit()
 const logger = createLogger({ level: config.logLevel })
