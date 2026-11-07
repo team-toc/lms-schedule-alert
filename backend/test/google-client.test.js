@@ -154,6 +154,10 @@ describe('Google 클라이언트: id_token 검증 (서명 생략, 클레임 검�
     ['네 부분', `${header}.${payload}.sig.extra`],
     ['빈 부분', `${header}..sig`],
     ['base64url이 아닌 문자', `${header}.!!!not*base64url!!!.sig`],
+    // Node의 base64url 디코더는 잘못된 문자를 조용히 건너뛴다. 클레임은 유효하므로 문자 검사가 없으면 통과해 버린다.
+    ['유효한 payload 중간에 * 끼움', `${header}.${payload.slice(0, 10)}*${payload.slice(10)}.sig`],
+    ['유효한 payload에 패딩(=) 붙임', `${header}.${payload}==.sig`],
+    ['유효한 payload 중간에 공백', `${header}.${payload.slice(0, 10)} ${payload.slice(10)}.sig`],
     ['payload가 JSON이 아님', `${header}.${base64url('not json')}.sig`],
     ['header가 JSON이 아님', `${base64url('not json')}.${payload}.sig`],
     ['payload가 객체가 아님', `${header}.${base64url('"just a string"')}.sig`],
