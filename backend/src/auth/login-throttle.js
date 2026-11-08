@@ -3,6 +3,8 @@ import { maskEmail } from '../email/email-input.js'
 // 이메일 로그인 실패 횟수 제한 (ADR 0007). 프로세스 메모리 Map, 시계는 주입받는다.
 // 키: (정규화된 이메일, IP). lockMs는 "실패를 세는 기간"이자 "잠금 시간"이다.
 const MS_PER_SECOND = 1000
+// 실패 기록 표의 최대 항목 수 (메모리 상한). 넘으면 잠기지 않은 가장 오래된 항목부터 버린다.
+export const LOGIN_THROTTLE_MAX_ENTRIES = 10000
 const IPV4_TAIL_PATTERN = /^(.*[:.])?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/
 const IPV6_KEPT_GROUPS = 4
 const MASK = '***'

@@ -3,6 +3,7 @@ import express from 'express'
 import { SESSION_COOKIE_NAME, sessionCookieOptions } from '../session.js'
 import { asyncRoute } from './async-route.js'
 import { mountOAuthProvider } from './oauth-flow.js'
+import { mountEmailRoutes } from './email-routes.js'
 import { toUserResponse } from './session-login.js'
 import { createKakaoProvider, createGoogleProvider } from './oauth-providers.js'
 
@@ -55,11 +56,12 @@ function logout(deps) {
   }
 }
 
-export function createAuthRouter({ config, kakaoClient, googleClient, accountService }) {
+export function createAuthRouter({ config, kakaoClient, googleClient, accountService, emailAccountService, loginThrottle }) {
   const deps = { config, accountService, cookieOptions: sessionCookieOptions(config) }
   const router = express.Router()
   mountOAuthProvider(router, { config, accountService, provider: createKakaoProvider(kakaoClient) })
   mountOAuthProvider(router, { config, accountService, provider: createGoogleProvider(googleClient) })
+  mountEmailRoutes(router, { emailAccountService, loginThrottle })
   router.get('/me', asyncRoute(getCurrentUser(deps)))
   router.post('/logout', asyncRoute(logout(deps)))
   return router

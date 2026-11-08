@@ -3,6 +3,9 @@ import { createHttpLogger } from './logger.js'
 import { createSessionMiddleware } from './session.js'
 import { createUserRepository } from './accounts/user-repository.js'
 import { createAccountService } from './accounts/account-service.js'
+import { createEmailAccountService } from './accounts/email-account-service.js'
+import { createPasswordHasher } from './email/password-hasher.js'
+import { createLoginThrottle, LOGIN_THROTTLE_MAX_ENTRIES } from './auth/login-throttle.js'
 import { createAuthRouter } from './auth/auth-routes.js'
 
 const HTTP_BAD_REQUEST = 400
@@ -12,17 +15,34 @@ const JSON_PARSE_ERROR_TYPE = 'entity.parse.failed'
 // nginx 한 단계 뒤에 있으므로 바로 앞 프록시 하나만 신뢰한다
 const TRUSTED_PROXY_HOPS = 1
 
+// 계정 로직(소셜 · 이메일)과 이메일 로그인 실패 횟수 제한을 만든다. 테스트는 저장소 · 해시 · 제한기를 바꿔 끼운다.
+// dummyPasswordHash(없는 이메일용 가짜 해시)는 서버 시작 시 한 번 만들어 넘긴다 (index.js).
+function createAuthServices(deps) {
+  const { config, logger, pool, userRepository, passwordHasher, loginThrottle, dummyPasswordHash } = deps
+  const repository = userRepository ?? createUserRepository(pool, { logger })
+  return {
+    accountService: createAccountService({ userRepository: repository }),
+    emailAccountService: createEmailAccountService({
+      userRepository: repository,
+      passwordHasher: passwordHasher ?? createPasswordHasher(),
+      dummyPasswordHash,
+    }),
+    loginThrottle:
+      loginThrottle ??
+      createLoginThrottle({ ...config.loginThrottle, maxEntries: LOGIN_THROTTLE_MAX_ENTRIES, now: Date.now, logger }),
+  }
+}
+
 // CORS는 열지 않는다. 프론트는 같은 출처(운영: nginx, 개발: Vite 프록시)로 /api를 호출한다.
-export function createApp({ config, logger, pool, kakaoClient, googleClient, sessionStore, userRepository }) {
+export function createApp(deps) {
+  const { config, logger, kakaoClient, googleClient, sessionStore } = deps
   const app = express()
   if (config.trustProxy) {
     // X-Forwarded-Proto를 믿어 req.secure를 판단해야 프록시 뒤에서 Secure 쿠키가 발급된다
     app.set('trust proxy', TRUSTED_PROXY_HOPS)
   }
 
-  const accountService = createAccountService({
-    userRepository: userRepository ?? createUserRepository(pool, { logger }),
-  })
+  const { accountService, emailAccountService, loginThrottle } = createAuthServices(deps)
 
   app.use(createHttpLogger(logger))
   app.use(express.json())
@@ -31,7 +51,7 @@ export function createApp({ config, logger, pool, kakaoClient, googleClient, ses
   app.get('/api/health', (req, res) => {
     res.json({ ok: true, time: new Date().toISOString() })
   })
-  app.use('/api/auth', createAuthRouter({ config, kakaoClient, googleClient, accountService }))
+  app.use('/api/auth', createAuthRouter({ config, kakaoClient, googleClient, accountService, emailAccountService, loginThrottle }))
 
   app.use(handleUnexpectedError)
   return app
