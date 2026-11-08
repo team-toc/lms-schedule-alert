@@ -17,6 +17,10 @@ const REQUIRED_KEYS = [
 const DEFAULT_PORT = 4000
 const MIN_SESSION_SECRET_LENGTH = 32
 const DEFAULT_SESSION_TTL_DAYS = 7
+// 이메일 로그인 실패 제한: LOGIN_LOCK_MINUTES는 "실패를 세는 기간"이자 "잠금 시간" (ADR 0007)
+const DEFAULT_LOGIN_MAX_FAILURES = 5
+const DEFAULT_LOGIN_LOCK_MINUTES = 15
+const MINUTE_MS = 60 * 1000
 const DAY_MS = 24 * 60 * 60 * 1000
 const BOOLEAN_VALUES = { true: true, false: false, '': false }
 
@@ -30,15 +34,15 @@ function parseBoolean(env, key) {
   return value
 }
 
-function parseSessionTtlDays(env) {
-  if (!env.SESSION_TTL_DAYS) {
-    return DEFAULT_SESSION_TTL_DAYS
+function parsePositiveInteger(env, key, defaultValue) {
+  if (!env[key]) {
+    return defaultValue
   }
-  const days = Number(env.SESSION_TTL_DAYS)
-  if (!Number.isInteger(days) || days <= 0) {
-    throw new ConfigError('SESSION_TTL_DAYS는 1 이상의 정수여야 함')
+  const value = Number(env[key])
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new ConfigError(`${key}는 1 이상의 정수여야 함`)
   }
-  return days
+  return value
 }
 
 // 값은 메시지에 넣지 않는다. 빠진 키 이름만 알려 준다.
@@ -60,7 +64,11 @@ export function loadConfig(env = process.env) {
     frontendUrl: env.FRONTEND_URL,
     session: {
       secret: env.SESSION_SECRET,
-      ttlMs: parseSessionTtlDays(env) * DAY_MS,
+      ttlMs: parsePositiveInteger(env, 'SESSION_TTL_DAYS', DEFAULT_SESSION_TTL_DAYS) * DAY_MS,
+    },
+    loginThrottle: {
+      maxFailures: parsePositiveInteger(env, 'LOGIN_MAX_FAILURES', DEFAULT_LOGIN_MAX_FAILURES),
+      lockMs: parsePositiveInteger(env, 'LOGIN_LOCK_MINUTES', DEFAULT_LOGIN_LOCK_MINUTES) * MINUTE_MS,
     },
     db: {
       host: env.DB_HOST,

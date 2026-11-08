@@ -1,5 +1,6 @@
-// users · auth_identities 테이블 접근만 담당하는 경계 레이어
+// users · auth_identities · password_credentials 테이블 접근만 담당하는 경계 레이어
 const DUPLICATE_KEY_ERRNO = 1062
+const EMAIL_PROVIDER = 'email'
 
 const SELECT_USER_COLUMNS = 'u.id, u.display_name, u.onboarding_step'
 
@@ -78,6 +79,18 @@ async function insertUserAndIdentity(connection, { provider, providerUserId, dis
 
 const SELECT_USER_BY_ID = `SELECT ${SELECT_USER_COLUMNS} FROM users u WHERE u.id = ?`
 
+const SELECT_EMAIL_CREDENTIAL = `SELECT ${SELECT_USER_COLUMNS}, pc.password_hash
+  FROM auth_identities ai
+  JOIN users u ON u.id = ai.user_id
+  JOIN password_credentials pc ON pc.identity_id = ai.id
+  WHERE ai.provider = ? AND ai.provider_user_id = ?`
+
+// provider가 email인 로그인 수단만 본다. 결과: { user, passwordHash } 또는 null
+async function selectEmailCredential(pool, email) {
+  const [rows] = await pool.execute(SELECT_EMAIL_CREDENTIAL, [EMAIL_PROVIDER, email])
+  return rows.length > 0 ? { user: toUser(rows[0]), passwordHash: rows[0].password_hash } : null
+}
+
 export function createUserRepository(pool, { logger }) {
   const transactionDeps = { pool, logger }
 
@@ -101,5 +114,23 @@ export function createUserRepository(pool, { logger }) {
     })
   }
 
-  return { findUserById, findUserByIdentity, createUserWithIdentity }
+  // 이메일 가입: 사용자 · 이메일 로그인 수단 · 비밀번호 해시를 한 트랜잭션으로 만든다 (중복 이메일이면 DuplicateIdentityError)
+  function createUserWithPassword({ email, displayName, passwordHash }) {
+    return runInTransaction(transactionDeps, async (connection) => {
+      const { userId, identityId } = await insertUserAndIdentity(connection, {
+        provider: EMAIL_PROVIDER,
+        providerUserId: email,
+        displayName,
+      })
+      await connection.execute('INSERT INTO password_credentials (identity_id, password_hash) VALUES (?, ?)', [
+        identityId,
+        passwordHash,
+      ])
+      return selectOne(connection, SELECT_USER_BY_ID, [userId])
+    })
+  }
+
+  const findEmailCredential = (email) => selectEmailCredential(pool, email)
+
+  return { findUserById, findUserByIdentity, createUserWithIdentity, createUserWithPassword, findEmailCredential }
 }
