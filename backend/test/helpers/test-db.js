@@ -2,6 +2,7 @@ import 'dotenv/config'
 import { loadConfig } from '../../src/config.js'
 import { createPool } from '../../src/db/pool.js'
 import { createMigrator } from '../../src/db/migrator.js'
+import { acquireMigrationLock } from './migration-lock.js'
 
 export const FRONTEND_URL = 'http://frontend.test'
 // 로그에 새면 안 되는 값. 로그 검사 테스트에서 찾아본다.
@@ -37,12 +38,25 @@ export function buildTestConfig() {
   })
 }
 
-// 테스트 DB에 연결하고 마이그레이션을 적용한다. 앱 모듈에는 의존하지 않는다.
-export async function openTestDb(config = buildTestConfig()) {
+// 테스트 DB에 연결하고 마이그레이션 잠금을 잡은 채 마이그레이션을 적용한다. 앱 모듈에는 의존하지 않는다.
+// holdMigrationLock: 마이그레이션을 되돌리는 테스트는 true로 잠금을 계속 들고 있다가 끝날 때 releaseMigrationLock을 부른다.
+export async function openTestDb(config = buildTestConfig(), { holdMigrationLock = false } = {}) {
   const pool = createPool(config.db)
-  await createMigrator(pool).up()
+  let releaseMigrationLock
+  try {
+    releaseMigrationLock = await acquireMigrationLock(pool, config.db.database)
+    await createMigrator(pool).up()
+  } catch (err) {
+    await releaseMigrationLock?.()
+    await pool.end()
+    throw err
+  }
+  if (!holdMigrationLock) {
+    await releaseMigrationLock()
+  }
   return {
     pool,
+    releaseMigrationLock,
     resetDatabase: async () => {
       for (const table of TABLES_TO_RESET) {
         await pool.query('DELETE FROM ??', [table])

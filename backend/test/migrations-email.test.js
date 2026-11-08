@@ -1,6 +1,6 @@
 import { describe, it, before, beforeEach, after } from 'node:test'
 import assert from 'node:assert/strict'
-import { openTestDb } from './helpers/test-db.js'
+import { openTestDb, buildTestConfig } from './helpers/test-db.js'
 import { createMigrator } from '../src/db/migrator.js'
 
 const CREATE_CREDENTIALS_MIGRATION = '0006_create_password_credentials'
@@ -43,7 +43,7 @@ describe('마이그레이션: 이메일 로그인 (password_credentials · provi
   let migrator
 
   before(async () => {
-    db = await openTestDb()
+    db = await openTestDb(buildTestConfig(), { holdMigrationLock: true })
     migrator = createMigrator(db.pool)
   })
   beforeEach(async () => {
@@ -51,8 +51,13 @@ describe('마이그레이션: 이메일 로그인 (password_credentials · provi
     await db.resetDatabase()
   })
   after(async () => {
-    await migrator.up()
-    await db.pool.end()
+    // 실패해도 잠금 · 연결은 반드시 정리한다
+    try {
+      await migrator?.up()
+    } finally {
+      await db?.releaseMigrationLock()
+      await db?.pool.end()
+    }
   })
 
   it("최신 스키마: provider = ENUM('kakao', 'google', 'email') — 기존 값 순서 유지, email은 맨 뒤", async () => {
