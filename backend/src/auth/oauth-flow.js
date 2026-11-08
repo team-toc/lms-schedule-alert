@@ -1,6 +1,6 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto'
-import { promisify } from 'node:util'
 import { asyncRoute } from './async-route.js'
+import { startUserSession } from './session-login.js'
 
 const RANDOM_TOKEN_BYTES = 32
 // 프론트 에러 화면 경로. 쿼리에는 에러 코드만 넣는다. (ADR 0005 열린 질문)
@@ -104,9 +104,7 @@ function handleCallback({ config, provider, accountService }) {
       providerUserId: profile.id,
       displayName: profile.nickname,
     })
-    // 세션 고정 공격 방지: 로그인 전 세션을 버리고 새 세션 ID로 발급
-    await promisify(req.session.regenerate.bind(req.session))()
-    req.session.userId = user.id
+    await startUserSession(req, user)
     req.log.info({ event: 'login_succeeded', provider: provider.name, userId: user.id, isNewUser }, `${provider.name} login succeeded`)
     // onboarding_step별 이동 경로는 프론트와 정한 뒤 나눈다 (ADR 0005 열린 질문)
     res.redirect(config.frontendUrl)

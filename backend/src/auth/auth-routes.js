@@ -3,6 +3,7 @@ import express from 'express'
 import { SESSION_COOKIE_NAME, sessionCookieOptions } from '../session.js'
 import { asyncRoute } from './async-route.js'
 import { mountOAuthProvider } from './oauth-flow.js'
+import { toUserResponse } from './session-login.js'
 import { createKakaoProvider, createGoogleProvider } from './oauth-providers.js'
 
 const HTTP_NO_CONTENT = 204
@@ -38,7 +39,7 @@ function getCurrentUser(deps) {
     if (!user) {
       return res.status(HTTP_UNAUTHORIZED).json(UNAUTHORIZED.notAuthenticated)
     }
-    res.json({ id: user.id, displayName: user.displayName, onboardingStep: user.onboardingStep })
+    res.json(toUserResponse(user))
   }
 }
 
