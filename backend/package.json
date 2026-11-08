@@ -4,8 +4,11 @@
   "version": "0.1.0",
   "type": "module",
   "main": "src/index.js",
+  "engines": {
+    "node": "^20.13.0 || >=22.0.0"
+  },
   "scripts": {
-    "dev": "nodemon src/index.js",
+    "dev": "node --watch src/index.js",
     "start": "node src/index.js",
     "migrate": "node scripts/migrate.js up",
     "migrate:down": "node scripts/migrate.js down",
@@ -27,7 +30,6 @@
   },
   "devDependencies": {
     "eslint": "^9.39.5",
-    "nodemon": "^3.1.10",
     "supertest": "^7.3.1"
   },
   "overrides": {
