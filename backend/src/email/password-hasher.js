@@ -4,6 +4,9 @@ import argon2 from 'argon2'
 // OWASP 권장 최솟값. 바꾸면 기존 해시는 그대로 검증되고(해시 문자열에 파라미터가 들어 있음), 새 해시만 새 값이 된다.
 export const ARGON2_PARAMS = Object.freeze({ type: 'argon2id', memoryCost: 19456, timeCost: 2, parallelism: 1 })
 
+// verify 전에 확인하는 저장 형식: $argon2id$v=<버전>$m=<메모리>,t=<반복>,p=<병렬>$<salt>$<hash>
+const ARGON2ID_HASH_PATTERN = /^\$argon2id\$v=\d+\$m=\d+,t=\d+,p=\d+\$[A-Za-z0-9+/]+\$[A-Za-z0-9+/]+$/
+
 const HASH_OPTIONS = {
   type: argon2.argon2id,
   memoryCost: ARGON2_PARAMS.memoryCost,
@@ -18,16 +21,12 @@ export function createPasswordHasher({ argon2Impl = argon2 } = {}) {
     return argon2Impl.hash(password, HASH_OPTIONS)
   }
 
+  // 저장된 해시가 argon2id 형식이 아니면 "불일치". 형식이 맞는데 나는 에러(잘못된 비밀번호 타입 등)는 모두 올린다.
   async function verify(passwordHash, password) {
-    try {
-      return await argon2Impl.verify(passwordHash, password)
-    } catch (err) {
-      // 해시 문자열 형식이 깨진 경우(argon2가 TypeError를 던짐)만 "불일치"로 본다. 그 밖의 에러는 올린다.
-      if (err instanceof TypeError) {
-        return false
-      }
-      throw err
+    if (typeof passwordHash !== 'string' || !ARGON2ID_HASH_PATTERN.test(passwordHash)) {
+      return false
     }
+    return argon2Impl.verify(passwordHash, password)
   }
 
   return { hash, verify }

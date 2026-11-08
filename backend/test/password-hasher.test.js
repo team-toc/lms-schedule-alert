@@ -48,7 +48,27 @@ describe('비밀번호 해시 (경계 레이어)', () => {
     await assert.rejects(hasherWithFailure.verify('$argon2id$v=19$m=19456,t=2,p=1$x$y', PASSWORD), (err) => err === internalFailure)
   })
 
-  it('verify: 해시 문자열이 깨져 있으면 예외 대신 false', async () => {
-    assert.equal(await hasher.verify('not-a-hash', PASSWORD), false)
+  it('a) verify: 해시 문자열이 argon2id 형식이 아니면 예외 대신 false', async () => {
+    const valid = await hasher.hash(PASSWORD)
+    const notArgon2id = [
+      'not-a-hash',
+      '',
+      null,
+      valid.replace('$argon2id$', '$argon2i$'),
+      valid.replace('$v=19$', '$v=$'),
+      valid.split('$').slice(0, 5).join('$'),
+      `${valid}$extra`,
+    ]
+    for (const passwordHash of notArgon2id) {
+      assert.equal(await hasher.verify(passwordHash, PASSWORD), false, String(passwordHash).slice(0, 30))
+    }
+  })
+
+  it('b) verify: 비밀번호 자리에 문자열이 아닌 값 → 에러가 위로 올라온다 (false로 숨기지 않음)', async () => {
+    const passwordHash = await hasher.hash(PASSWORD)
+
+    for (const notString of [12345678, null, undefined, { password: PASSWORD }]) {
+      await assert.rejects(hasher.verify(passwordHash, notString), TypeError, String(notString))
+    }
   })
 })
