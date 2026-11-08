@@ -103,6 +103,12 @@ describe('가입 입력 검증 (validateSignupInput)', () => {
     })
   }
 
+  it('길이는 UTF-16이 아니라 코드포인트로 센다: 이모지 4개는 짧고, 이모지 128개는 통과', () => {
+    assert.equal('😀'.repeat(4).length, 8, '테스트 전제: UTF-16으로는 8')
+    assert.deepEqual(signupError({ email: 'me@example.com', password: '😀'.repeat(4) }), { code: 'password_too_short', field: 'password' })
+    assert.ok(validateSignupInput({ email: 'me@example.com', password: '😀'.repeat(PASSWORD_MAX_LENGTH) }).value)
+  })
+
   it('비밀번호 8자 · 128자는 통과, 이모지는 1자로 센다', () => {
     for (const password of ['a'.repeat(8), 'a'.repeat(128), '😀'.repeat(8)]) {
       assert.ok(validateSignupInput({ email: 'me@example.com', password }).value, password)

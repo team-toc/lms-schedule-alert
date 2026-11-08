@@ -40,6 +40,14 @@ describe('비밀번호 해시 (경계 레이어)', () => {
     assert.equal(await hasher.verify(passwordHash, `${long}B`), false)
   })
 
+  it('verify: 해시 문자열 형식 오류가 아닌 에러(라이브러리 내부 실패 등)는 삼키지 않고 올린다', async () => {
+    const internalFailure = new Error('native addon failure')
+    const failingArgon2 = { ...(await import('argon2')).default, verify: async () => Promise.reject(internalFailure) }
+    const hasherWithFailure = createPasswordHasher({ argon2Impl: failingArgon2 })
+
+    await assert.rejects(hasherWithFailure.verify('$argon2id$v=19$m=19456,t=2,p=1$x$y', PASSWORD), (err) => err === internalFailure)
+  })
+
   it('verify: 해시 문자열이 깨져 있으면 예외 대신 false', async () => {
     assert.equal(await hasher.verify('not-a-hash', PASSWORD), false)
   })
