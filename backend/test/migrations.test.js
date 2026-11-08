@@ -5,6 +5,8 @@ import { createMigrator } from '../src/db/migrator.js'
 
 const GOOGLE_PROVIDER_MIGRATION = '0004_add_google_provider'
 const WIDEN_PROVIDER_USER_ID_MIGRATION = '0005_widen_provider_user_id'
+// 0005 직후 상태를 보려면 이것부터 되돌린다 (이메일 로그인 마이그레이션)
+const FIRST_MIGRATION_AFTER_0005 = '0006_create_password_credentials'
 const PROVIDER_USER_ID_MAX_LENGTH = 255
 const KAKAO_ID = '4000000001'
 
@@ -52,7 +54,9 @@ describe('마이그레이션: Google 제공자 · provider_user_id 확장', () =
     await db.pool.end()
   })
 
-  it('최신 스키마: provider = ENUM(kakao, google) 순서, provider_user_id = VARCHAR(255)', async () => {
+  it('0005 적용 직후: provider = ENUM(kakao, google) 순서, provider_user_id = VARCHAR(255)', async () => {
+    await migrator.down({ to: FIRST_MIGRATION_AFTER_0005 })
+
     assert.equal(await columnType(db.pool, 'provider'), "enum('kakao','google')")
     assert.equal(await columnType(db.pool, 'provider_user_id'), `varchar(${PROVIDER_USER_ID_MAX_LENGTH})`)
   })

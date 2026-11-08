@@ -15,7 +15,7 @@ export const GOOGLE_TEST_CONFIG = {
 }
 const TEST_DB_SUFFIX = '_test'
 // 자식 → 부모 순서로 비워야 외래키에 걸리지 않는다
-const TABLES_TO_RESET = ['auth_identities', 'users', 'sessions']
+const TABLES_TO_RESET = ['password_credentials', 'auth_identities', 'users', 'sessions']
 
 export function buildTestConfig() {
   const testDbName = process.env.TEST_DB_NAME
