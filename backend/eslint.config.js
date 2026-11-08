@@ -12,8 +12,7 @@ export default [
     },
   },
   {
-    // 테스트 파일의 describe 블록은 여러 it을 묶는 그릇이라 함수 길이 규칙에서 뺀다.
-    // ESLint가 describe 콜백만 골라 뺄 수 없어 테스트 파일 전체에서 이 규칙 하나만 끈다(헬퍼는 그대로 적용).
+    // 테스트 파일만 함수 길이 규칙을 끈다: 위반은 전부 it을 묶는 describe 블록이고, ESLint가 describe 콜백만 골라 뺄 수 없어서(헬퍼는 그대로 적용)
     files: ['test/**/*.test.js'],
     rules: { 'max-lines-per-function': 'off' },
   },
