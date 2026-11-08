@@ -139,6 +139,18 @@ describe('7. 이메일 로그인 실패 횟수 제한', () => {
     await emailLogin(request(app), RIGHT).set('X-Forwarded-For', '198.51.100.7').expect(429)
   })
 
+  it('제한기를 주입하지 않으면 설정값(LOGIN_MAX_FAILURES · LOGIN_LOCK_MINUTES)으로 앱이 만든다', async () => {
+    const config = { ...ctx.config, loginThrottle: { maxFailures: 2, lockMs: MINUTE_MS } }
+    const app = ctx.buildApp(createFakeKakaoClient(), { config })
+    await signup(request(app), RIGHT).expect(201)
+    await failFrom(app, 2)
+
+    const res = await emailLogin(request(app), RIGHT).expect(429)
+
+    const retryAfter = Number(res.headers['retry-after'])
+    assert.ok(retryAfter > 0 && retryAfter <= 60, `잠금 시간은 설정한 1분 이내여야 함: ${retryAfter}`)
+  })
+
   it('가입은 실패 횟수 제한 대상이 아니다', async () => {
     const app = buildApp()
     await failFrom(app, MAX_FAILURES)
