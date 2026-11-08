@@ -109,6 +109,44 @@ describe('가입 입력 검증 (validateSignupInput)', () => {
     }
   })
 
+  describe('비밀번호 NFC 정규화 (ADR 0007)', () => {
+    const HANGUL = '비밀번호한글'
+    const nfd = (s) => s.normalize('NFD')
+
+    it('NFD로 들어온 한글 비밀번호는 NFC로 바꿔서 돌려준다', () => {
+      assert.notEqual(nfd(HANGUL), HANGUL, '테스트 전제: NFD와 NFC가 달라야 함')
+
+      const { value } = validateSignupInput({ email: 'me@example.com', password: `${nfd(HANGUL)}12` })
+
+      assert.equal(value.password, `${HANGUL}12`)
+    })
+
+    it('길이는 정규화한 뒤 센다: NFD 128글자(코드포인트 256개)는 NFC 128자라 통과', () => {
+      const password = nfd('가'.repeat(PASSWORD_MAX_LENGTH))
+      assert.equal([...password].length, PASSWORD_MAX_LENGTH * 2)
+
+      assert.ok(validateSignupInput({ email: 'me@example.com', password }).value)
+    })
+
+    it('b) 정규화 후 128자를 넘으면 400 password_too_long (NFD 129글자)', () => {
+      const password = nfd('가'.repeat(PASSWORD_MAX_LENGTH + 1))
+
+      assert.deepEqual(signupError({ email: 'me@example.com', password }), { code: 'password_too_long', field: 'password' })
+    })
+
+    it('정규화 후 8자 미만이면 password_too_short (NFD 4글자 = 코드포인트 8개)', () => {
+      const password = nfd('가나다라')
+      assert.equal([...password].length, 8)
+
+      assert.deepEqual(signupError({ email: 'me@example.com', password }), { code: 'password_too_short', field: 'password' })
+    })
+
+    it('로그인 입력도 NFC로 정규화하고, 상한은 정규화 후 기준', () => {
+      assert.equal(validateLoginInput({ email: 'me@example.com', password: nfd(HANGUL) }).value.password, HANGUL)
+      assert.ok(validateLoginInput({ email: 'me@example.com', password: nfd('가'.repeat(PASSWORD_MAX_LENGTH)) }).value)
+    })
+  })
+
   it('displayName이 문자열이 아니면 invalid_display_name (field: displayName)', () => {
     assert.deepEqual(signupError({ email: 'me@example.com', password: PASSWORD, displayName: 42 }), {
       code: 'invalid_display_name',

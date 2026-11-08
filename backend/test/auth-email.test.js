@@ -142,6 +142,31 @@ describe('이메일 가입 · 로그인', () => {
     await request(app).get('/api/auth/me').set('Cookie', before).expect(401)
   })
 
+  describe('비밀번호 NFC 정규화', () => {
+    const HANGUL_PASSWORD = '우리학교비밀번호2026'
+
+    it('a) NFC로 가입한 한글 비밀번호를 NFD로 입력해도 로그인 성공', async () => {
+      assert.notEqual(HANGUL_PASSWORD.normalize('NFD'), HANGUL_PASSWORD)
+      const { body: created } = await signup(request.agent(app), { email: VALID_EMAIL, password: HANGUL_PASSWORD }).expect(201)
+
+      const res = await emailLogin(request.agent(app), { email: VALID_EMAIL, password: HANGUL_PASSWORD.normalize('NFD') }).expect(200)
+
+      assert.equal(res.body.id, created.id)
+    })
+
+    it('NFD로 가입하고 NFC로 로그인해도 성공 (반대 방향)', async () => {
+      await signup(request.agent(app), { email: VALID_EMAIL, password: HANGUL_PASSWORD.normalize('NFD') }).expect(201)
+
+      await emailLogin(request.agent(app), { email: VALID_EMAIL, password: HANGUL_PASSWORD }).expect(200)
+    })
+
+    it('b) 정규화 후 128자를 넘으면 가입 400 password_too_long', async () => {
+      const res = await signup(request.agent(app), { email: VALID_EMAIL, password: '가'.repeat(129).normalize('NFD') }).expect(400)
+
+      assert.deepEqual({ error: res.body.error, field: res.body.field }, { error: 'password_too_long', field: 'password' })
+    })
+  })
+
   it('9. DB에는 원문이 아니라 argon2id 해시가 저장된다', async () => {
     await signup(request.agent(app), { email: VALID_EMAIL, password: VALID_PASSWORD }).expect(201)
 

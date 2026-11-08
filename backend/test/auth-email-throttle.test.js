@@ -17,7 +17,13 @@ describe('7. 이메일 로그인 실패 횟수 제한', () => {
   let clock
 
   function buildApp({ trustProxy = false } = {}) {
-    const loginThrottle = createLoginThrottle({ maxFailures: MAX_FAILURES, lockMs: LOCK_MS, maxEntries: 1000, now: clock.now })
+    const loginThrottle = createLoginThrottle({
+      maxFailures: MAX_FAILURES,
+      lockMs: LOCK_MS,
+      maxEntries: 1000,
+      now: clock.now,
+      logger: ctx.silentLogger,
+    })
     return ctx.buildApp(createFakeKakaoClient(), { loginThrottle, config: { ...ctx.config, trustProxy } })
   }
 
