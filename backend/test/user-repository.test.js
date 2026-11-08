@@ -165,6 +165,64 @@ describe('MariaDB 사용자 저장소', () => {
     assert.equal(Number(row.len), DISPLAY_NAME_MAX_LENGTH)
   })
 
+  describe('이메일 계정', () => {
+    const EMAIL_INPUT = { email: 'user@example.com', displayName: '이메일사용자', passwordHash: '$argon2id$v=19$m=19456,t=2,p=1$c2FsdA$aGFzaA' }
+
+    it('createUserWithPassword: users · auth_identities(email) · password_credentials를 한 트랜잭션으로 만든다', async () => {
+      const user = await repo.createUserWithPassword(EMAIL_INPUT)
+
+      assert.deepEqual(Object.keys(user).sort(), ['displayName', 'id', 'onboardingStep'])
+      const [[row]] = await db.pool.query(
+        `SELECT ai.provider, ai.provider_user_id, pc.password_hash, pc.email_verified
+         FROM auth_identities ai JOIN password_credentials pc ON pc.identity_id = ai.id WHERE ai.user_id = ?`,
+        [user.id],
+      )
+      assert.deepEqual({ ...row }, { provider: 'email', provider_user_id: EMAIL_INPUT.email, password_hash: EMAIL_INPUT.passwordHash, email_verified: 0 })
+    })
+
+    it('같은 이메일 두 번 → DuplicateIdentityError, 롤백되어 users · password_credentials가 늘지 않는다', async () => {
+      await repo.createUserWithPassword(EMAIL_INPUT)
+
+      await assert.rejects(repo.createUserWithPassword({ ...EMAIL_INPUT, displayName: '두번째' }), DuplicateIdentityError)
+
+      assert.equal(await db.countRows('users'), 1)
+      assert.equal(await db.countRows('password_credentials'), 1)
+    })
+
+    it('비밀번호 행 생성이 실패하면(NOT NULL 위반) 원래 에러를 올리고 users · identity도 롤백된다', async () => {
+      await assert.rejects(repo.createUserWithPassword({ ...EMAIL_INPUT, passwordHash: null }), (err) => {
+        assert.ok(!(err instanceof DuplicateIdentityError))
+        return true
+      })
+
+      assert.equal(await db.countRows('users'), 0)
+      assert.equal(await db.countRows('auth_identities'), 0)
+    })
+
+    it('findEmailCredential: 사용자와 해시를 돌려주고, 없으면 null', async () => {
+      const created = await repo.createUserWithPassword(EMAIL_INPUT)
+
+      assert.deepEqual(await repo.findEmailCredential(EMAIL_INPUT.email), { user: created, passwordHash: EMAIL_INPUT.passwordHash })
+      assert.equal(await repo.findEmailCredential('nobody@example.com'), null)
+    })
+
+    it('findEmailCredential: provider가 email인 행만 본다 (같은 문자열 · 비밀번호 행이 붙은 kakao identity도 무시)', async () => {
+      const [user] = await db.pool.execute('INSERT INTO users (display_name) VALUES (?)', ['소셜'])
+      const [identity] = await db.pool.execute('INSERT INTO auth_identities (user_id, provider, provider_user_id) VALUES (?, ?, ?)', [
+        user.insertId,
+        'kakao',
+        EMAIL_INPUT.email,
+      ])
+      // 앱은 소셜 identity에 비밀번호 행을 만들지 않지만, provider 조건만으로 걸러지는지 보려고 일부러 붙인다
+      await db.pool.execute('INSERT INTO password_credentials (identity_id, password_hash) VALUES (?, ?)', [
+        identity.insertId,
+        EMAIL_INPUT.passwordHash,
+      ])
+
+      assert.equal(await repo.findEmailCredential(EMAIL_INPUT.email), null)
+    })
+  })
+
   it('계정 로직 + DB: 재로그인 시 display_name은 처음 값을 유지한다', async () => {
     const service = createAccountService({ userRepository: repo })
     await service.loginWithIdentity(IDENTITY)
