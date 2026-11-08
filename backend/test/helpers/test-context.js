@@ -1,6 +1,8 @@
 import { createLogger } from '../../src/logger.js'
 import { createSessionStore } from '../../src/session.js'
 import { createApp } from '../../src/app.js'
+import { createPasswordHasher } from '../../src/email/password-hasher.js'
+import { createDummyPasswordHash } from '../../src/accounts/email-account-service.js'
 import { buildTestConfig, openTestDb } from './test-db.js'
 
 export { FRONTEND_URL, TEST_CLIENT_SECRET, TEST_GOOGLE_CLIENT_SECRET, GOOGLE_TEST_CONFIG } from './test-db.js'
@@ -20,6 +22,8 @@ export async function openTestContext() {
   const baseConfig = buildTestConfig()
   const db = await openTestDb(baseConfig)
   const silentLogger = createLogger({ level: 'silent' })
+  // 없는 이메일용 가짜 해시: 실제 서버처럼 시작할 때(파일마다) 한 번만 만든다
+  const dummyPasswordHash = await createDummyPasswordHash(createPasswordHasher())
   // express-session은 미들웨어마다 저장소에 리스너를 붙이므로, 앱마다 저장소를 따로 만들고 끝에 모두 닫는다
   const sessionStores = []
 
@@ -29,7 +33,18 @@ export async function openTestContext() {
     const { passwordHasher, loginThrottle } = overrides
     const sessionStore = createSessionStore(db.pool, { ttlMs: config.session.ttlMs, clearExpired: false })
     sessionStores.push(sessionStore)
-    return createApp({ config, logger, pool: db.pool, kakaoClient, googleClient, sessionStore, userRepository, passwordHasher, loginThrottle })
+    return createApp({
+      config,
+      logger,
+      pool: db.pool,
+      kakaoClient,
+      googleClient,
+      sessionStore,
+      userRepository,
+      passwordHasher,
+      loginThrottle,
+      dummyPasswordHash,
+    })
   }
 
   return {

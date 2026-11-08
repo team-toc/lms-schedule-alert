@@ -3,8 +3,9 @@ import assert from 'node:assert/strict'
 import request from 'supertest'
 import { openTestContext } from './helpers/test-context.js'
 import { createFakeKakaoClient } from './helpers/fake-kakao-client.js'
-import { signup, emailLogin, createFakeClock, VALID_EMAIL, VALID_PASSWORD, MINUTE_MS } from './helpers/email-flow.js'
+import { signup, emailLogin, createFakeClock, createCountingHasher, VALID_EMAIL, VALID_PASSWORD, MINUTE_MS } from './helpers/email-flow.js'
 import { createLoginThrottle } from '../src/auth/login-throttle.js'
+import { createPasswordHasher } from '../src/email/password-hasher.js'
 
 const MAX_FAILURES = 5
 const LOCK_MINUTES = 15
@@ -16,7 +17,7 @@ describe('7. 이메일 로그인 실패 횟수 제한', () => {
   let ctx
   let clock
 
-  function buildApp({ trustProxy = false } = {}) {
+  function buildApp({ trustProxy = false, passwordHasher } = {}) {
     const loginThrottle = createLoginThrottle({
       maxFailures: MAX_FAILURES,
       lockMs: LOCK_MS,
@@ -24,7 +25,7 @@ describe('7. 이메일 로그인 실패 횟수 제한', () => {
       now: clock.now,
       logger: ctx.silentLogger,
     })
-    return ctx.buildApp(createFakeKakaoClient(), { loginThrottle, config: { ...ctx.config, trustProxy } })
+    return ctx.buildApp(createFakeKakaoClient(), { loginThrottle, passwordHasher, config: { ...ctx.config, trustProxy } })
   }
 
   async function failFrom(app, times, { body = WRONG, forwardedFor } = {}) {
@@ -56,6 +57,21 @@ describe('7. 이메일 로그인 실패 횟수 제한', () => {
     assert.equal(locked.body.error, 'too_many_attempts')
     assert.equal(locked.headers['retry-after'], String(LOCK_MINUTES * 60))
     assert.equal(lockedRight.body.error, 'too_many_attempts', '잠긴 동안은 비밀번호가 맞는지도 알려 주지 않음')
+  })
+
+  it('a) 잠긴 상태에서 맞는 비밀번호로 로그인해도 429, b) 잠긴 동안 해시 비교(verify)는 0번', async () => {
+    const hasher = createCountingHasher(createPasswordHasher())
+    const app = buildApp({ passwordHasher: hasher })
+    await signup(request(app), RIGHT).expect(201)
+    await failFrom(app, MAX_FAILURES)
+    const verifiesBeforeLock = hasher.calls.verify
+    assert.equal(verifiesBeforeLock, MAX_FAILURES, '잠기기 전 실패는 매번 비교함')
+
+    await emailLogin(request(app), RIGHT).expect(429)
+    await emailLogin(request(app), WRONG).expect(429)
+    await emailLogin(request(app), { email: 'nobody@example.com', password: 'x' }).expect(401)
+
+    assert.equal(hasher.calls.verify - verifiesBeforeLock, 1, '잠긴 두 요청은 비교 0번, 잠기지 않은 다른 이메일만 1번')
   })
 
   it('Retry-After는 주입한 시계 기준 남은 시간, 잠금 시간이 지나면 다시 로그인 가능', async () => {
