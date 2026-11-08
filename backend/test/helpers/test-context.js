@@ -25,9 +25,11 @@ export async function openTestContext() {
 
   function buildApp(kakaoClient, overrides = {}) {
     const { googleClient = unusedGoogleClient, userRepository, logger = silentLogger, config = baseConfig } = overrides
+    // 이메일 로그인: passwordHasher(호출 감시), loginThrottle(주입한 시계). 없으면 앱 기본값
+    const { passwordHasher, loginThrottle } = overrides
     const sessionStore = createSessionStore(db.pool, { ttlMs: config.session.ttlMs, clearExpired: false })
     sessionStores.push(sessionStore)
-    return createApp({ config, logger, pool: db.pool, kakaoClient, googleClient, sessionStore, userRepository })
+    return createApp({ config, logger, pool: db.pool, kakaoClient, googleClient, sessionStore, userRepository, passwordHasher, loginThrottle })
   }
 
   return {

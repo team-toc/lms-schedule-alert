@@ -78,6 +78,20 @@ describe('설정 검증 (loadConfig)', () => {
     assertConfigErrorNamesOnly(env, GOOGLE_KEYS)
   })
 
+  it('로그인 실패 제한 기본값: 5회 · 15분', () => {
+    assert.deepEqual(loadConfig(VALID_ENV).loginThrottle, { maxFailures: 5, lockMs: 15 * 60 * 1000 })
+  })
+
+  it('LOGIN_MAX_FAILURES · LOGIN_LOCK_MINUTES로 조정, 양의 정수가 아니면 실패', () => {
+    assert.deepEqual(loadConfig({ ...VALID_ENV, LOGIN_MAX_FAILURES: '10', LOGIN_LOCK_MINUTES: '30' }).loginThrottle, {
+      maxFailures: 10,
+      lockMs: 30 * 60 * 1000,
+    })
+    for (const [key, bad] of [['LOGIN_MAX_FAILURES', '0'], ['LOGIN_LOCK_MINUTES', '-5'], ['LOGIN_MAX_FAILURES', '2.5']]) {
+      assert.throws(() => loadConfig({ ...VALID_ENV, [key]: bad }), new RegExp(key))
+    }
+  })
+
   it('기본값: 프록시 신뢰 끔, 세션 7일', () => {
     const config = loadConfig(VALID_ENV)
 

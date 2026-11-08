@@ -40,5 +40,17 @@ export function createRacingUserRepository(pool, { logger, racers = 2 }) {
         throw err
       }
     },
+    // 이메일 가입: 조회 없이 바로 생성하므로 장벽 없이 중복 키 횟수만 센다
+    findEmailCredential: (email) => real.findEmailCredential(email),
+    async createUserWithPassword(input) {
+      try {
+        return await real.createUserWithPassword(input)
+      } catch (err) {
+        if (err instanceof DuplicateIdentityError) {
+          stats.duplicateErrors += 1
+        }
+        throw err
+      }
+    },
   }
 }
