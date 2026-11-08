@@ -5,7 +5,10 @@ import { createUserRepository } from './accounts/user-repository.js'
 import { createAccountService } from './accounts/account-service.js'
 import { createAuthRouter } from './auth/auth-routes.js'
 
+const HTTP_BAD_REQUEST = 400
 const HTTP_INTERNAL_ERROR = 500
+// express.json()이 본문 JSON 파싱에 실패했을 때 붙이는 에러 type
+const JSON_PARSE_ERROR_TYPE = 'entity.parse.failed'
 // nginx 한 단계 뒤에 있으므로 바로 앞 프록시 하나만 신뢰한다
 const TRUSTED_PROXY_HOPS = 1
 
@@ -36,6 +39,11 @@ export function createApp({ config, logger, pool, kakaoClient, googleClient, ses
 
 // 처리하지 못한 에러는 내부 내용을 숨기고 요청 ID만 돌려준다
 function handleUnexpectedError(err, req, res, next) {
+  if (err.type === JSON_PARSE_ERROR_TYPE && !res.headersSent) {
+    // 클라이언트 잘못이라 경고로만 남긴다. 본문 내용은 남기지 않는다.
+    req.log.warn({ event: 'invalid_json' }, 'request body is not valid JSON')
+    return res.status(HTTP_BAD_REQUEST).json({ error: 'invalid_json', message: '요청 본문이 올바른 JSON이 아닙니다.' })
+  }
   req.log.error({ err: { name: err.name, code: err.code } }, 'unhandled error')
   if (res.headersSent) {
     return next(err)
