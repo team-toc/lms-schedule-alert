@@ -1,3 +1,4 @@
-# 로컬 전용 설계 메모 (GitHub에 올리지 않음). ERD만 예외로 올린다
+# 로컬 전용 설계 메모 (GitHub에 올리지 않음). ERD · API 설명서만 예외로 올린다
 docs/*
 !docs/erd.md
+!docs/api.md
