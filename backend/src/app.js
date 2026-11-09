@@ -9,6 +9,7 @@ import { createLoginThrottle, LOGIN_THROTTLE_MAX_ENTRIES } from './auth/login-th
 import { createAuthRouter } from './auth/auth-routes.js'
 
 const HTTP_BAD_REQUEST = 400
+const HTTP_NOT_FOUND = 404
 const HTTP_INTERNAL_ERROR = 500
 // express.json()이 본문 JSON 파싱에 실패했을 때 붙이는 에러 type
 const JSON_PARSE_ERROR_TYPE = 'entity.parse.failed'
@@ -52,9 +53,15 @@ export function createApp(deps) {
     res.json({ ok: true, time: new Date().toISOString() })
   })
   app.use('/api/auth', createAuthRouter({ config, kakaoClient, googleClient, accountService, emailAccountService, loginThrottle }))
+  app.use('/api', respondNotFound)
 
   app.use(handleUnexpectedError)
   return app
+}
+
+// /api 아래에서 매칭되는 라우트가 없을 때. 없는 경로와 잘못된 메서드를 나누지 않고 404로 통일한다(405 없음).
+function respondNotFound(req, res) {
+  res.status(HTTP_NOT_FOUND).json({ error: 'not_found', message: '요청한 API를 찾을 수 없습니다.' })
 }
 
 // 처리하지 못한 에러는 내부 내용을 숨기고 요청 ID만 돌려준다

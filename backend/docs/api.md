@@ -100,6 +100,7 @@ export default defineConfig({
 | 400 `invalid_json` | `Content-Type: application/json`인데 본문이 올바른 JSON이 아니거나, 맨 바깥이 객체 · 배열이 아님(`null` 등) | JSON 본문을 받는 모든 API |
 | 400 (검증) | 입력 검증 실패. `field`로 어느 항목인지 알려 준다 | 이메일 가입 · 로그인 |
 | 401 | 로그인 안 됨 / 이미 로그아웃됨 / 이메일 · 비밀번호 틀림 (API마다 `error`가 다름) | `/me`, 로그아웃, 이메일 로그인 |
+| 404 `not_found` | `/api` 아래 없는 경로, 또는 있는 경로에 잘못된 메서드(예: `GET /api/auth/logout`). 405로 나누지 않는다 | `/api` 전체 |
 | 409 | 이미 가입된 이메일 | 이메일 가입 |
 | 415 | JSON이 아닌 요청 | 이메일 가입 · 로그인만 |
 | 429 | 로그인 실패 횟수 초과. `Retry-After` 헤더(초) | 이메일 로그인만 |
@@ -359,6 +360,7 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 | `email_already_registered` | 409 | 이메일 가입 | 이미 가입된 이메일 | "이미 가입된 이메일입니다" + 로그인 화면 안내 |
 | `unsupported_media_type` | 415 | 이메일 가입 · 로그인 | JSON이 아닌 요청 | 프론트 버그. `Content-Type: application/json` 확인 |
 | `too_many_attempts` | 429 | 이메일 로그인 | 실패 횟수 초과로 잠김 | `Retry-After`(초)를 분으로 바꿔 "N분 뒤 다시 시도" 표시, 그동안 로그인 버튼 비활성화 |
+| `not_found` | 404 | `/api` 전체 | 없는 경로 · 잘못된 메서드 | 프론트 버그. 경로 · 메서드 확인 |
 | `internal_error` | 500 | 모든 JSON API | 서버 오류 | "잠시 후 다시 시도" 표시. `requestId`를 신고용으로 보여 줘도 됨 |
 | `invalid_state` | (302 쿼리) | 소셜 콜백 | 로그인 요청 만료 · 위조 · 재사용 | 에러 화면 + 다시 로그인 |
 | `invalid_request` | (302 쿼리) | 소셜 콜백 | 인가 코드 없음 | 에러 화면 + 다시 로그인 |
@@ -372,7 +374,6 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 
 지금 코드의 동작이다. 바뀌면 이 문서도 고친다.
 
-- **없는 경로 · 잘못된 메서드는 JSON이 아니라 HTML 404**를 돌려준다(Express 기본 응답, 예: `GET /api/auth/logout`, `GET /api/nope`). `res.json()` 전에 `res.ok` · 상태 코드를 먼저 확인할 것.
 - **본문이 100KB를 넘으면 500 `internal_error`**를 돌려준다(413이 아님). 정상적인 가입 · 로그인 요청은 이 크기에 닿지 않는다.
 - 로그인 실패 횟수 기록은 서버 메모리에 있어 서버를 재시작하면 초기화된다.
 
