@@ -67,8 +67,10 @@ export default defineConfig({
 ### JSON 요청
 
 - 본문이 있는 요청은 `Content-Type: application/json`으로 보낸다(`; charset=utf-8`이 붙어도 된다).
-- 이메일 가입 · 로그인은 JSON이 아니면 **415**로 거부한다(다른 사이트의 폼 POST 차단).
-- 본문 크기 한도는 100KB.
+- 이메일 가입 · 로그인은 JSON이 아니면 **415** `unsupported_media_type`으로 거부한다(다른 사이트의 폼 POST 차단).
+- 문자셋은 UTF-8만 받는다. 다른 문자셋(예: `charset=iso-8859-1`)은 **415** `unsupported_charset`.
+- `Content-Encoding`은 없음(`identity`) · `gzip` · `deflate`만 받는다. 그 밖은 **415** `unsupported_encoding`. 브라우저 `fetch`는 기본으로 붙이지 않으므로 보통 신경 쓸 필요 없다.
+- 본문 크기 한도는 **100KB**. 넘으면 **413** `payload_too_large`.
 
 ### 공통 응답 형식
 
@@ -102,7 +104,9 @@ export default defineConfig({
 | 401 | 로그인 안 됨 / 이미 로그아웃됨 / 이메일 · 비밀번호 틀림 (API마다 `error`가 다름) | `/me`, 로그아웃, 이메일 로그인 |
 | 404 `not_found` | `/api` 아래 없는 경로, 또는 있는 경로에 잘못된 메서드(예: `GET /api/auth/logout`). 405로 나누지 않는다 | `/api` 전체 |
 | 409 | 이미 가입된 이메일 | 이메일 가입 |
-| 415 | JSON이 아닌 요청 | 이메일 가입 · 로그인만 |
+| 413 `payload_too_large` | 본문이 100KB를 넘음 | 본문을 받는 모든 API |
+| 415 `unsupported_media_type` | JSON이 아닌 요청 | 이메일 가입 · 로그인만 |
+| 415 `unsupported_charset` · `unsupported_encoding` | JSON 본문의 문자셋이 UTF-8이 아님 · 지원하지 않는 `Content-Encoding` | JSON 본문을 받는 모든 API |
 | 429 | 로그인 실패 횟수 초과. `Retry-After` 헤더(초) | 이메일 로그인만 |
 | 500 | 서버 오류. `requestId` 포함 | 모든 JSON API |
 
@@ -359,6 +363,9 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 | `invalid_credentials` | 401 | 이메일 로그인 | 이메일 없음 또는 비밀번호 틀림 | `message` 표시(어느 쪽이 틀렸는지 구분하지 말 것) |
 | `email_already_registered` | 409 | 이메일 가입 | 이미 가입된 이메일 | "이미 가입된 이메일입니다" + 로그인 화면 안내 |
 | `unsupported_media_type` | 415 | 이메일 가입 · 로그인 | JSON이 아닌 요청 | 프론트 버그. `Content-Type: application/json` 확인 |
+| `unsupported_charset` | 415 | JSON 본문을 받는 API | 문자셋이 UTF-8이 아님 | 프론트 버그. `charset`을 빼거나 `utf-8`로 |
+| `unsupported_encoding` | 415 | JSON 본문을 받는 API | 지원하지 않는 `Content-Encoding` | 프론트 버그. 압축 헤더를 직접 붙이지 말 것 |
+| `payload_too_large` | 413 | 본문을 받는 API | 본문 100KB 초과 | 프론트 버그(정상 요청은 닿지 않음) |
 | `too_many_attempts` | 429 | 이메일 로그인 | 실패 횟수 초과로 잠김 | `Retry-After`(초)를 분으로 바꿔 "N분 뒤 다시 시도" 표시, 그동안 로그인 버튼 비활성화 |
 | `not_found` | 404 | `/api` 전체 | 없는 경로 · 잘못된 메서드 | 프론트 버그. 경로 · 메서드 확인 |
 | `internal_error` | 500 | 모든 JSON API | 서버 오류 | "잠시 후 다시 시도" 표시. `requestId`를 신고용으로 보여 줘도 됨 |
@@ -374,7 +381,6 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 
 지금 코드의 동작이다. 바뀌면 이 문서도 고친다.
 
-- **본문이 100KB를 넘으면 500 `internal_error`**를 돌려준다(413이 아님). 정상적인 가입 · 로그인 요청은 이 크기에 닿지 않는다.
 - 로그인 실패 횟수 기록은 서버 메모리에 있어 서버를 재시작하면 초기화된다.
 
 ## 7. 프론트와 정해야 할 것

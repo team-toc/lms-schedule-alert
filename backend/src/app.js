@@ -8,11 +8,17 @@ import { createPasswordHasher } from './email/password-hasher.js'
 import { createLoginThrottle, LOGIN_THROTTLE_MAX_ENTRIES } from './auth/login-throttle.js'
 import { createAuthRouter } from './auth/auth-routes.js'
 
-const HTTP_BAD_REQUEST = 400
 const HTTP_NOT_FOUND = 404
 const HTTP_INTERNAL_ERROR = 500
-// express.json()이 본문 JSON 파싱에 실패했을 때 붙이는 에러 type
-const JSON_PARSE_ERROR_TYPE = 'entity.parse.failed'
+
+// express.json()(body-parser)이 본문을 읽다 실패할 때 붙이는 err.type → 응답. 클라이언트 잘못이라 4xx로 돌려준다.
+// 표에 없는 type은 처리하지 못한 에러로 보고 500을 돌려준다.
+const BODY_ERROR_RESPONSES = new Map([
+  ['entity.parse.failed', { status: 400, error: 'invalid_json', message: '요청 본문이 올바른 JSON이 아닙니다.' }],
+  ['entity.too.large', { status: 413, error: 'payload_too_large', message: '요청 본문이 너무 큽니다. 최대 100KB까지 보낼 수 있습니다.' }],
+  ['charset.unsupported', { status: 415, error: 'unsupported_charset', message: '지원하지 않는 문자셋입니다. UTF-8로 보내 주세요.' }],
+  ['encoding.unsupported', { status: 415, error: 'unsupported_encoding', message: '지원하지 않는 Content-Encoding입니다.' }],
+])
 // nginx 한 단계 뒤에 있으므로 바로 앞 프록시 하나만 신뢰한다
 const TRUSTED_PROXY_HOPS = 1
 
@@ -64,12 +70,13 @@ function respondNotFound(req, res) {
   res.status(HTTP_NOT_FOUND).json({ error: 'not_found', message: '요청한 API를 찾을 수 없습니다.' })
 }
 
-// 처리하지 못한 에러는 내부 내용을 숨기고 요청 ID만 돌려준다
+// 요청 본문 오류는 표대로 4xx, 그 밖의 처리하지 못한 에러는 내부 내용을 숨기고 요청 ID만 돌려준다
 function handleUnexpectedError(err, req, res, next) {
-  if (err.type === JSON_PARSE_ERROR_TYPE && !res.headersSent) {
+  const bodyError = BODY_ERROR_RESPONSES.get(err.type)
+  if (bodyError && !res.headersSent) {
     // 클라이언트 잘못이라 경고로만 남긴다. 본문 내용은 남기지 않는다.
-    req.log.warn({ event: 'invalid_json' }, 'request body is not valid JSON')
-    return res.status(HTTP_BAD_REQUEST).json({ error: 'invalid_json', message: '요청 본문이 올바른 JSON이 아닙니다.' })
+    req.log.warn({ event: 'request_body_rejected', reason: bodyError.error }, 'request body rejected')
+    return res.status(bodyError.status).json({ error: bodyError.error, message: bodyError.message })
   }
   req.log.error({ err: { name: err.name, code: err.code } }, 'unhandled error')
   if (res.headersSent) {
