@@ -83,6 +83,11 @@
   background: #405ad9;
 }
 
+.login-button:disabled {
+  background: #a9b6f2;
+  cursor: not-allowed;
+}
+
 .login-button:focus-visible {
   outline: 2px solid #4d67eb;
   outline-offset: 2px;

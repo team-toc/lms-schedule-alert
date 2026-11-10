@@ -1,15 +1,16 @@
 import { useState } from 'react'
+import { login } from './authApi'
 import './login.css'
 
-// 이메일 형식 검사
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function Login({ onLogin }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
 
     if (!email.trim() || !password) {
@@ -23,8 +24,18 @@ function Login({ onLogin }) {
     }
 
     setError('')
+    setIsSubmitting(true)
 
-    onLogin()
+    const result = await login(email.trim(), password)
+
+    setIsSubmitting(false)
+
+    if (!result.ok) {
+      setError(result.message)
+      return
+    }
+
+    onLogin(result.user)
   }
 
   return (
@@ -66,8 +77,12 @@ function Login({ onLogin }) {
             </p>
           )}
 
-          <button type="submit" className="login-button">
-            로그인
+          <button
+            type="submit"
+            className="login-button"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? '로그인 중...' : '로그인'}
           </button>
         </form>
       </div>
