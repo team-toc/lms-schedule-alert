@@ -17,7 +17,7 @@
 <rect x="60" y="262" width="330" height="156" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
 <path d="M60 302h330" stroke="#D1D1D6" stroke-width="1.5"/>
 <text x="76" y="288" font-size="16" font-weight="800" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">auth_identities</text>
-<text x="376" y="288" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">소셜 로그인 계정</text>
+<text x="376" y="288" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">로그인 수단</text>
 <rect x="74" y="308" width="26" height="17" rx="5" fill="#E7F1FF"/>
 <text x="87" y="320" font-size="10.5" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">PK</text>
 <text x="110" y="320" font-size="14" font-weight="600" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">id</text>
@@ -27,9 +27,25 @@
 <text x="110" y="346" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">user_id</text>
 <text x="376" y="346" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">사용자</text>
 <text x="110" y="372" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">provider</text>
-<text x="376" y="372" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">카카오 · 구글</text>
+<text x="376" y="372" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">카카오 · 구글 · 이메일</text>
 <text x="110" y="398" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">provider_user_id</text>
-<text x="376" y="398" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">제공자 쪽 ID</text>
+<text x="376" y="398" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">제공자 ID 또는 이메일</text>
+<rect x="440" y="262" width="330" height="156" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
+<path d="M440 302h330" stroke="#D1D1D6" stroke-width="1.5"/>
+<text x="456" y="288" font-size="16" font-weight="800" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">password_credentials</text>
+<text x="756" y="288" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">비밀번호 (이메일 로그인)</text>
+<rect x="454" y="308" width="26" height="17" rx="5" fill="#E7F1FF"/>
+<text x="467" y="320" font-size="10.5" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">PK</text>
+<text x="490" y="320" font-size="14" font-weight="600" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">id</text>
+<text x="756" y="320" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">번호</text>
+<rect x="454" y="334" width="26" height="17" rx="5" fill="#F2F2F7"/>
+<text x="467" y="346" font-size="10.5" font-weight="700" fill="#6E6E73" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">FK</text>
+<text x="490" y="346" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">identity_id</text>
+<text x="756" y="346" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">로그인 수단</text>
+<text x="490" y="372" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">password_hash</text>
+<text x="756" y="372" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">argon2id 해시</text>
+<text x="490" y="398" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">email_verified</text>
+<text x="756" y="398" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">메일 인증 여부</text>
 <rect x="60" y="454" width="330" height="156" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
 <path d="M60 494h330" stroke="#D1D1D6" stroke-width="1.5"/>
 <text x="76" y="480" font-size="16" font-weight="800" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">lms_tokens</text>
@@ -216,6 +232,9 @@
 <path d="M390 130 L440 130" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
 <path d="M406 121v18" stroke="#1D1D1F" stroke-width="2"/>
 <path d="M420 130L440 120M420 130L440 140M420 130L440 130" stroke="#1D1D1F" stroke-width="2" fill="none"/>
+<path d="M390 340 L440 340" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
+<path d="M406 331v18" stroke="#1D1D1F" stroke-width="2"/>
+<path d="M424 331v18" stroke="#1D1D1F" stroke-width="2"/>
 <path d="M390 165 L405 165 L405 600 L440 600" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
 <path d="M406 156v18" stroke="#1D1D1F" stroke-width="2"/>
 <path d="M420 600L440 590M420 600L440 610M420 600L440 600" stroke="#1D1D1F" stroke-width="2" fill="none"/>
@@ -247,5 +266,5 @@
 <path d="M1330 846h60" stroke="#1D1D1F" stroke-width="1.8"/><path d="M1342 837v18M1378 837v18" stroke="#1D1D1F" stroke-width="2"/>
 <text x="1402" y="851" font-size="13" font-weight="600" fill="#3A3A3C" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">1 : 1</text>
 <text x="1540" y="851" font-size="12.5" font-weight="500" fill="#6E6E73" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">PK 기본키 · FK 외래키</text>
-<text x="1540" y="874" font-size="12" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">users · auth_identities 는 feature/auth 마이그레이션 기준 · 로그인 세션 표는 라이브러리가 자동 생성 · 초안</text>
+<text x="1540" y="874" font-size="12" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">users · auth_identities · password_credentials 는 PR #1 마이그레이션 그대로 · 세션 표는 라이브러리가 자동 생성 · 나머지는 초안</text>
 </svg>

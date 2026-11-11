@@ -2,16 +2,17 @@
 
 ![ERD](erd.svg)
 
-표 11개. "누가(users) → 무엇을 가져와(courses · announcements · assignments) → 무엇이 바뀌었고(changes) → 알리고(notifications) → 사용자가 결정하면(approvals) → 캘린더에 보인다(schedules)" 순서로 읽으면 된다.
+표 12개. "누가(users) → 무엇을 가져와(courses · announcements · assignments) → 무엇이 바뀌었고(changes) → 알리고(notifications) → 사용자가 결정하면(approvals) → 캘린더에 보인다(schedules)" 순서로 읽으면 된다.
 
 ## 계정
 
 | 표 | 왜 있나 | 눈여겨볼 컬럼 |
 |---|---|---|
 | users | 로그인한 사람 한 명 = 한 행. 모든 데이터가 여기 매달린다. | display_name 카카오 · 구글에서 받은 이름. onboarding_step 가입 뒤 토큰 등록까지 했는지. 안 했으면 설정 화면으로 보낸다. |
-| auth_identities | 한 사람이 카카오로도, 구글로도 들어올 수 있다. 로그인 수단을 users 에 넣으면 수단이 늘 때마다 컬럼이 늘어서 따로 뺐다. | provider + provider_user_id 가 유일. 같은 카카오 계정으로 두 번 가입되는 걸 막는다. |
+| auth_identities | 한 사람이 카카오로도, 구글로도, 이메일로도 들어올 수 있다. 로그인 수단을 users 에 넣으면 수단이 늘 때마다 컬럼이 늘어서 따로 뺐다. | provider(kakao · google · email) + provider_user_id 가 유일. 이메일 로그인은 provider_user_id 에 이메일이 들어간다. 같은 계정으로 두 번 가입되는 걸 막는다. |
+| password_credentials | 이메일 로그인만 비밀번호가 있다. auth_identities 에 컬럼으로 넣으면 소셜 행은 늘 비어서 따로 뺐다. | password_hash argon2id 해시만 저장(원문 없음). email_verified 는 인증 메일 도입 전까지 false. identity_id 와 1:1. |
 
-로그인 세션 표(sessions)는 express-session 라이브러리가 만들고 관리해서 ERD에는 그리지 않았다.
+로그인 세션 표(sessions)는 express-session 라이브러리가 만들고 관리해서 ERD에는 그리지 않았다. 계정 3개 표는 PR #1(develop) 마이그레이션 0001~0007 그대로이고, 나머지는 초안이다.
 
 ## 연결
 
