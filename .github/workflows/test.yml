@@ -1,11 +1,11 @@
-# PR · develop push 때마다 backend 테스트를 돌린다. 실패하면 PR 에 빨간 체크.
+# PR · develop/feature push 때마다 backend 테스트를 돌린다. 실패하면 PR 에 빨간 체크.
 name: backend test
 
 on:
   pull_request:
     paths: ['backend/**', '.github/workflows/test.yml']
   push:
-    branches: [develop, main]
+    branches: [develop, main, 'feature/**']
     paths: ['backend/**', '.github/workflows/test.yml']
 
 jobs:
