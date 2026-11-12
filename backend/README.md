@@ -4,7 +4,7 @@ Node.js + Express API 서버. 카카오 로그인과 MariaDB 세션을 다룬다
 
 ## 준비
 
-- Node.js 20 이상
+- **Node.js 22 이상** (Node 20에서는 Windows에서 `argon2` 미리 빌드된 바이너리가 세그폴트로 죽고, `npm test`의 glob 패턴(`"test/**/*.test.js"`)은 Node 21부터만 동작한다)
 - MariaDB (로컬 `127.0.0.1:3306`, 시간대 UTC · utf8mb4)
 - 앱 전용 DB 계정과 DB 두 개(개발 · 테스트). 관리자 계정으로 한 번만 실행한다.
 
