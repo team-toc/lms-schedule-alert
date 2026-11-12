@@ -43,14 +43,17 @@ export function tokenResponseBody(idToken, code = 'code') {
   }
 }
 
-// 응답 흉내: 네트워크 오류, 응답 없음(타임아웃까지 대기)
+// 응답 흉내: 네트워크 오류, 타임아웃
 export const networkError = () => {
   throw new TypeError('fetch failed')
 }
-export const neverResponds = (init) =>
-  new Promise((resolve, reject) => {
-    init.signal.addEventListener('abort', () => reject(init.signal.reason))
-  })
+// AbortSignal.timeout이 끝났을 때 fetch가 내는 것과 같은 에러로 바로 거부한다. 실제 타이머에 기대지 않아 결정적이다
+// (AbortSignal.timeout 타이머는 이벤트 루프를 붙잡지 않아 Node 22에서 테스트가 끝나 버린다).
+// 클라이언트가 타임아웃 신호를 붙였는지는 테스트에서 requests[n].signal로 확인한다.
+export function timeoutError() {
+  return new DOMException('The operation was aborted due to timeout', 'TimeoutError')
+}
+export const timesOut = () => Promise.reject(timeoutError())
 
 // 실제 Google 대신 토큰 엔드포인트를 흉내 내는 fetch.
 // 인가 코드별로 응답을 정해 두고(issueIdToken · respond), 정하지 않은 코드는 400 invalid_grant.
