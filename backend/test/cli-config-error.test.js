@@ -2,14 +2,29 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { childProcessEnv } from './helpers/child-env.js'
 
 const BACKEND_DIR = fileURLToPath(new URL('..', import.meta.url))
 const PROCESS_TIMEOUT_MS = 10000
-// 출력에 나오면 안 되는 값. 실제 .env 값 대신 이 값들이 쓰이도록 환경변수로 넘긴다(dotenv는 이미 있는 값을 덮지 않음).
+// 출력에 나오면 안 되는 값
 const VALUES_MUST_NOT_PRINT = {
   DB_PASSWORD: 'fake-db-password-MUST-NOT-PRINT',
   SESSION_SECRET: 'fake-session-secret-MUST-NOT-PRINT-0123456789',
   KAKAO_CLIENT_SECRET: 'fake-kakao-secret-MUST-NOT-PRINT',
+}
+// 설정 검증을 통과하는 완전한 가짜 설정. 개발자 .env는 읽지 않으므로(childProcessEnv) 여기 있는 값만 쓰인다.
+const COMPLETE_FAKE_ENV = {
+  DB_HOST: '127.0.0.1',
+  DB_PORT: '3306',
+  DB_NAME: 'lms_schedule_alert',
+  DB_USER: 'fake-db-user',
+  FRONTEND_URL: 'http://frontend.test',
+  KAKAO_REST_API_KEY: 'fake-kakao-rest-api-key',
+  KAKAO_REDIRECT_URI: 'http://backend.test/api/auth/kakao/callback',
+  GOOGLE_CLIENT_ID: 'fake-google-client-id',
+  GOOGLE_CLIENT_SECRET: 'fake-google-client-secret',
+  GOOGLE_REDIRECT_URI: 'http://backend.test/api/auth/google/callback',
+  ...VALUES_MUST_NOT_PRINT,
 }
 
 const ENTRY_POINTS = [
@@ -21,7 +36,7 @@ const ENTRY_POINTS = [
 function runWithEnv(args, envOverrides) {
   return spawnSync(process.execPath, args, {
     cwd: BACKEND_DIR,
-    env: { ...process.env, ...VALUES_MUST_NOT_PRINT, ...envOverrides },
+    env: childProcessEnv({ ...COMPLETE_FAKE_ENV, ...envOverrides }),
     encoding: 'utf8',
     timeout: PROCESS_TIMEOUT_MS,
   })
