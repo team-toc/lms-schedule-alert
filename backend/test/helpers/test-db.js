@@ -17,7 +17,19 @@ export const GOOGLE_TEST_CONFIG = {
 const TEST_DB_SUFFIX = '_test'
 const DEFAULT_TEST_DB_NAME = 'lms_schedule_alert_test'
 // 자식 → 부모 순서로 비워야 외래키에 걸리지 않는다
-const TABLES_TO_RESET = ['password_credentials', 'auth_identities', 'users', 'sessions']
+const TABLES_TO_RESET = [
+  'user_announcements',
+  'user_assignments',
+  'enrollments',
+  'lms_tokens',
+  'announcements',
+  'assignments',
+  'courses',
+  'password_credentials',
+  'auth_identities',
+  'users',
+  'sessions',
+]
 
 // 테스트가 환경(개발자 .env 또는 CI 환경변수)에서 읽는 값은 테스트 DB 접속 정보뿐이다.
 // 그 밖의 설정(세션 · 제공자 키 · 프록시 · 실패 제한 등)은 아래에 고정해, 개발자 .env 내용에 따라 결과가 바뀌지 않게 한다.

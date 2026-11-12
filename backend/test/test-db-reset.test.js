@@ -1,13 +1,20 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
+import { readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { openTestDb, buildTestConfig, testDbConnectionEnv } from './helpers/test-db.js'
 import { childProcessEnv } from './helpers/child-env.js'
 
 const BACKEND_DIR = fileURLToPath(new URL('..', import.meta.url))
 const PROCESS_TIMEOUT_MS = 30000
-const EXPECTED_LAST_MIGRATION = '0007_add_email_provider'
+const UP_SUFFIX = '.up.sql'
+// 마지막 마이그레이션은 폴더에서 읽는다 (마이그레이션이 늘어도 이 테스트를 고치지 않게)
+const EXPECTED_LAST_MIGRATION = readdirSync(new URL('../migrations', import.meta.url))
+  .filter((file) => file.endsWith(UP_SUFFIX))
+  .sort()
+  .at(-1)
+  .slice(0, -UP_SUFFIX.length)
 
 function runReset(envOverrides = {}) {
   return spawnSync(process.execPath, ['scripts/reset-test-db.js'], {
