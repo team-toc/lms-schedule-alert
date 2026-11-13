@@ -18,6 +18,7 @@ const TEST_DB_SUFFIX = '_test'
 const DEFAULT_TEST_DB_NAME = 'lms_schedule_alert_test'
 // 자식 → 부모 순서로 비워야 외래키에 걸리지 않는다
 const TABLES_TO_RESET = [
+  'notifications',
   'user_announcements',
   'user_assignments',
   'enrollments',
