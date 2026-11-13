@@ -40,15 +40,39 @@ async function recordCrash({ tokenRepository, logger }, scope, err) {
   return { outcome: 'failed', errorCode: INTERNAL_ERROR }
 }
 
+// Canvas 오류 등 예상한 실패: 상태(401 · 복호화 불가면 needs_reauth, 그 밖은 failing)와 고정 코드를 기록한다
+async function recordFailed({ tokenRepository, logger }, { userId, tokenEnc }, errorCode, details = {}) {
+  const status = NEEDS_REAUTH_CODES.has(errorCode) ? 'needs_reauth' : 'failing'
+  await tokenRepository.recordFailure({ userId, tokenEnc, status, errorCode })
+  logger.warn({ event: 'lms_sync_failed', userId, errorCode, status, ...details }, 'lms sync failed')
+  return { outcome: 'failed', errorCode }
+}
+
+// 이 프로세스에서 사용자별로 진행 중인 동기화. 실행기가 "이미 실행 중"으로 건너뛴 뒤 끝나기를 기다릴 때 쓴다
+function createRunningTracker() {
+  const running = new Map()
+  return {
+    track(userId, promise) {
+      const set = running.get(userId) ?? new Set()
+      set.add(promise)
+      running.set(userId, set)
+      const done = () => {
+        set.delete(promise)
+        if (set.size === 0) {
+          running.delete(userId)
+        }
+      }
+      promise.then(done, done)
+      return promise
+    },
+    whenUserIdle: (userId) => Promise.allSettled([...(running.get(userId) ?? [])]),
+  }
+}
+
 export function createLmsSync({ canvasClient, tokenCipher, tokenRepository, syncRepository, baseUrl, now, logger }) {
   const { fetchSnapshot } = createSnapshotFetcher({ canvasClient, baseUrl, logger })
-
-  async function fail({ userId, tokenEnc }, errorCode, details = {}) {
-    const status = NEEDS_REAUTH_CODES.has(errorCode) ? 'needs_reauth' : 'failing'
-    await tokenRepository.recordFailure({ userId, tokenEnc, status, errorCode })
-    logger.warn({ event: 'lms_sync_failed', userId, errorCode, status, ...details }, 'lms sync failed')
-    return { outcome: 'failed', errorCode }
-  }
+  const tracker = createRunningTracker()
+  const fail = (scope, errorCode, details) => recordFailed({ tokenRepository, logger }, scope, errorCode, details)
 
   // scope.tokenEnc는 토큰 행을 읽은 뒤 채운다(예상 밖 에러 때 어느 토큰의 실패인지 기록하려고)
   async function runSync(scope) {
@@ -81,12 +105,15 @@ export function createLmsSync({ canvasClient, tokenCipher, tokenRepository, sync
   }
 
   // 결과: { outcome: 'applied' } | { outcome: 'failed', errorCode } | { outcome: 'skipped', reason }
-  async function syncUser(userId) {
+  async function lockedSync(userId) {
     const scope = { userId, tokenEnc: null }
     const work = () => runSync(scope).catch((err) => recordCrash({ tokenRepository, logger }, scope, err))
     const { acquired, result } = await tokenRepository.withSyncLock(userId, work)
     return acquired ? result : { outcome: 'skipped', reason: 'already_running' }
   }
 
-  return { syncUser }
+  return {
+    syncUser: (userId) => tracker.track(userId, lockedSync(userId)),
+    whenUserIdle: tracker.whenUserIdle,
+  }
 }

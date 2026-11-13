@@ -10,6 +10,7 @@ import { createPasswordHasher } from './email/password-hasher.js'
 import { createDummyPasswordHash } from './accounts/email-account-service.js'
 import { createLmsServices } from './lms/lms-services.js'
 import { createApp } from './app.js'
+import { createShutdown } from './shutdown.js'
 
 const config = loadConfigOrExit()
 // Canvas 설정(주소 · 토큰 암호화 키)은 서버에만 필요하다. DB에 연결하기 전에 검사해 틀리면 키 이름만 출력하고 종료 (ADR 0008)
@@ -29,6 +30,12 @@ const dummyPasswordHash = await createDummyPasswordHash(passwordHasher)
 const lmsServices = createLmsServices({ pool, logger, lmsConfig })
 const app = createApp({ config, logger, pool, kakaoClient, googleClient, sessionStore, passwordHasher, dummyPasswordHash, lmsServices })
 
-app.listen(config.port, () => {
+const server = app.listen(config.port, () => {
   logger.info({ port: config.port, trustProxy: config.trustProxy }, 'backend started')
+  // 첫 주기 동기화는 시작 직후가 아니라 한 주기 뒤 (배포 · 재시작마다 Canvas에 몰아서 요청하지 않게)
+  lmsServices.syncRunner.start()
 })
+
+const shutdown = createShutdown({ server, syncRunner: lmsServices.syncRunner, pool, logger })
+process.on('SIGTERM', () => shutdown('SIGTERM'))
+process.on('SIGINT', () => shutdown('SIGINT'))

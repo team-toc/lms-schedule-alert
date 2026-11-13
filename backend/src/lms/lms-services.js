@@ -14,7 +14,13 @@ export function createLmsServices({ pool, logger, lmsConfig, fetchFn = globalThi
   const tokenRepository = createLmsTokenRepository(pool, { logger })
   const syncRepository = createLmsSyncRepository(pool, { logger })
   const lmsSync = createLmsSync({ canvasClient, tokenCipher, tokenRepository, syncRepository, baseUrl: lmsConfig.canvasBaseUrl, now, logger })
-  const syncRunner = createSyncRunner({ lmsSync, logger })
+  const syncRunner = createSyncRunner({
+    lmsSync,
+    listTargets: tokenRepository.listSyncTargets,
+    intervalMs: lmsConfig.syncIntervalMs,
+    concurrency: lmsConfig.syncConcurrency,
+    logger,
+  })
   const tokenService = createTokenService({ canvasClient, tokenCipher, tokenRepository, syncRunner, now })
   return { lmsSync, syncRunner, tokenService }
 }

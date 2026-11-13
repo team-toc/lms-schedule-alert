@@ -81,5 +81,13 @@ export function createLmsTokenRepository(pool, { logger }) {
     ])
   }
 
-  return { findToken, saveToken, recordFailure, withSyncLock: (userId, work) => withSyncLock(pool, userId, work) }
+  // 주기 실행 대상: needs_reauth(토큰을 다시 등록해야 함)는 뺀다. 가장 오래전에 동기화한 사용자부터
+  async function listSyncTargets() {
+    const [rows] = await pool.query(
+      "SELECT user_id FROM lms_tokens WHERE status <> 'needs_reauth' ORDER BY last_synced_at IS NOT NULL, last_synced_at, user_id",
+    )
+    return rows.map((row) => row.user_id)
+  }
+
+  return { findToken, saveToken, recordFailure, listSyncTargets, withSyncLock: (userId, work) => withSyncLock(pool, userId, work) }
 }

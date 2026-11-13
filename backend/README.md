@@ -46,6 +46,7 @@ npm run dev
 | `CANVAS_BASE_URL` | 학교 Canvas 주소, 경로 없이 (운영은 https만). 서버 시작 때만 검사하고 마이그레이션에는 필요 없다 |
 | `CANVAS_TOKEN_KEY` | Canvas 토큰 암호화 키. `openssl rand -base64 32` (32바이트 base64). **잃어버리면 저장된 토큰을 복구할 수 없다** |
 | `LMS_SYNC_INTERVAL_MINUTES` | Canvas 주기 동기화 간격(분). 기본 30 |
+| `LMS_SYNC_CONCURRENCY` | 동시에 도는 Canvas 동기화 수(첫 · 주기 · 수동 합계). 1 ~ 3, 기본 2 (DB 풀 10개를 API와 나눠 씀) |
 
 ## 마이그레이션
 

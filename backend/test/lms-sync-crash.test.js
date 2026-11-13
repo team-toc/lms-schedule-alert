@@ -95,6 +95,21 @@ describe('백그라운드 동기화의 예상 밖 에러', () => {
     assert.equal((await tokenRow(ctx.pool, userId)).status, 'ok')
   })
 
+  it('주기 실행(runOnce)에서 DB 에러 → 그 사용자는 failing으로 기록하고 다음 사용자로 넘어간다, 앱은 계속 응답한다', async () => {
+    const a = await connectUser(built, { email: 'a@example.com', token: TOKEN_A })
+    canvas.addAccount('7~SecondUser0123456789abcdef', { id: 9002 })
+    canvas.setCourses('7~SecondUser0123456789abcdef', [canvasCourse(102)])
+    const b = await connectUser(built, { email: 'b@example.com', token: '7~SecondUser0123456789abcdef' })
+    fault.active = true
+
+    const summary = await built.lms.syncRunner.runOnce()
+
+    assert.deepEqual(summary, { total: 2, applied: 1, failed: 1, skipped: 0 }, 'A(과제 있음)만 실패, B(과제 없음)는 반영')
+    assert.equal((await tokenRow(ctx.pool, a.userId)).last_error_code, 'internal_error')
+    assert.equal((await tokenRow(ctx.pool, b.userId)).status, 'ok')
+    await a.agent.get('/api/auth/me').expect(200)
+  })
+
   it('로그에는 사건 이름 · 에러 이름 · 코드만 남고, 에러 메시지(SQL 값이 들어갈 수 있음)는 남지 않는다', async () => {
     const { userId } = await connectUser(built, { email: 'a@example.com', token: TOKEN_A })
     fault.active = true

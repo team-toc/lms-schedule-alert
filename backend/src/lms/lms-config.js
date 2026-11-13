@@ -5,6 +5,9 @@ import { ConfigError } from '../config.js'
 const REQUIRED_KEYS = ['CANVAS_BASE_URL', 'CANVAS_TOKEN_KEY']
 const TOKEN_KEY_BYTES = 32
 const DEFAULT_SYNC_INTERVAL_MINUTES = 30
+// 동기화 하나가 DB 연결을 최대 2개 쓴다(사용자 잠금 연결 + 반영 트랜잭션 또는 조회). 풀 10개 중 동기화 몫을 6개 이하로 (ADR 0008)
+const DEFAULT_SYNC_CONCURRENCY = 2
+const MAX_SYNC_CONCURRENCY = 3
 const MINUTE_MS = 60 * 1000
 
 // base64 표준 문자열이 정확히 32바이트로 풀릴 때만 받는다. 다시 인코딩해 같은지 비교해 공백 · base64url · 패딩 오류도 거른다.
@@ -44,6 +47,17 @@ function parseIntervalMinutes(value) {
   return minutes
 }
 
+function parseConcurrency(value) {
+  if (!value) {
+    return DEFAULT_SYNC_CONCURRENCY
+  }
+  const concurrency = Number(value)
+  if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > MAX_SYNC_CONCURRENCY) {
+    throw new ConfigError(`LMS_SYNC_CONCURRENCY는 1 ~ ${MAX_SYNC_CONCURRENCY} 사이의 정수여야 함`)
+  }
+  return concurrency
+}
+
 export function loadLmsConfig(env, { isProduction }) {
   const missing = REQUIRED_KEYS.filter((key) => !env[key])
   if (missing.length > 0) {
@@ -53,6 +67,7 @@ export function loadLmsConfig(env, { isProduction }) {
     canvasBaseUrl: parseBaseUrl(env.CANVAS_BASE_URL, { isProduction }),
     tokenKey: parseTokenKey(env.CANVAS_TOKEN_KEY),
     syncIntervalMs: parseIntervalMinutes(env.LMS_SYNC_INTERVAL_MINUTES) * MINUTE_MS,
+    syncConcurrency: parseConcurrency(env.LMS_SYNC_CONCURRENCY),
   }
 }
 
