@@ -1,6 +1,6 @@
 # 백엔드 API 설명서
 
-프론트엔드 연동용. 실제 코드(`src/app.js`, `src/auth/*`, `src/email/email-input.js`, `src/lms/*`) 기준으로 쓴다. 라우트를 추가 · 변경하는 커밋에서 이 문서도 같이 고친다(`test/api-doc.test.js`가 문서에 없는 라우트를 잡는다).
+프론트엔드 연동용. 실제 코드(`src/app.js`, `src/auth/*`, `src/email/email-input.js`, `src/lms/*`, `src/calendar/*`) 기준으로 쓴다. 라우트를 추가 · 변경하는 커밋에서 이 문서도 같이 고친다(`test/api-doc.test.js`가 문서에 없는 라우트를 잡는다).
 
 - [1. 공통 사항](#1-공통-사항)
 - [2. 엔드포인트](#2-엔드포인트)
@@ -95,13 +95,13 @@ export default defineConfig({
 
 | 상태 | 언제 | 어느 API |
 | --- | --- | --- |
-| 200 | 성공(본문 있음) | `/me`, 이메일 로그인, health |
+| 200 | 성공(본문 있음) | `/me`, 이메일 로그인, health, Canvas 상태, 캘린더 |
 | 201 | 이메일 가입 성공 | 이메일 가입 |
 | 202 | 받아들였고 나머지는 백그라운드에서 처리 | Canvas 토큰 등록 · 수동 동기화 |
 | 204 | 성공(본문 없음) | 로그아웃 · Canvas 연동 해제 |
 | 302 | 리다이렉트 | 소셜 로그인 시작 · 콜백 |
 | 400 `invalid_json` | `Content-Type: application/json`인데 본문이 올바른 JSON이 아니거나, 맨 바깥이 객체 · 배열이 아님(`null` 등) | JSON 본문을 받는 모든 API |
-| 400 (검증) | 입력 검증 실패. `field`로 어느 항목인지 알려 준다 | 이메일 가입 · 로그인, Canvas 토큰 등록 |
+| 400 (검증) | 입력 검증 실패. `field`로 어느 항목인지 알려 준다 | 이메일 가입 · 로그인, Canvas 토큰 등록, 캘린더 |
 | 401 | 로그인 안 됨 / 이미 로그아웃됨 / 이메일 · 비밀번호 틀림 (API마다 `error`가 다름) | `/me`, 로그아웃, 이메일 로그인, `/api/lms/*` · `/api/calendar/*` 전체 |
 | 404 `not_found` | `/api` 아래 없는 경로, 또는 있는 경로에 잘못된 메서드(예: `GET /api/auth/logout`). 405로 나누지 않는다 | `/api` 전체 |
 | 404 `lms_not_connected` | Canvas를 연결하지 않았는데 해제 · 동기화를 요청 | Canvas 연동 해제 · 수동 동기화 |
@@ -130,6 +130,7 @@ export default defineConfig({
 | DELETE | `/api/lms/token` | 예 | Canvas 연동 해제(토큰 · 내 연결 삭제) |
 | GET | `/api/lms/status` | 예 | Canvas 연동 · 동기화 상태 |
 | POST | `/api/lms/sync` | 예 | 지금 동기화(5분에 한 번) |
+| GET | `/api/calendar/events` | 예 | 기간 안의 내 과제 마감 |
 
 ### GET /api/health
 
@@ -385,6 +386,73 @@ Canvas 연동 · 동기화 상태. 토큰 등록 직후에는 이걸 몇 초 간
   | 409 | `lms_needs_reauth` | 토큰을 다시 등록해야 함 |
   | 429 | `sync_too_frequent` | 5분 안에 다시 요청. `Retry-After` 헤더(초) |
 
+### GET /api/calendar/events
+
+기간 안에 마감이 있는 **내** Canvas 과제 목록. 과제 마감은 Canvas가 그 사용자에게 준 값이다(개인 · 분반 연장 반영). 동기화된 자료를 읽기만 한다(Canvas를 부르지 않음).
+
+- 로그인 필요
+- 요청: 쿼리 `from` · `to` (둘 다 필수)
+
+  ```text
+  GET /api/calendar/events?from=2026-11-01T00:00:00%2B09:00&to=2026-12-01T00:00:00%2B09:00
+  ```
+
+  | 쿼리 | 규칙 |
+  | --- | --- |
+  | `from` | **시간대가 붙은** ISO 8601 시각: `YYYY-MM-DDTHH:mm[:ss[.sss]]` + `Z` 또는 `±hh:mm`. 이 시각 **포함** |
+  | `to` | 형식은 같음. 이 시각 **미포함**. `from`보다 뒤, `from`부터 최대 **92일** |
+
+  - **시간대가 없는 값(`2026-11-01T00:00:00`) · 날짜만(`2026-11-01`)은 거부한다**(UTC로 간주하지 않음). 브라우저 현지 시각을 그대로 보내면 한국에서는 9시간이 어긋나기 때문. `new Date(...).toISOString()`(Z) 또는 `+09:00`을 붙여 보낸다.
+  - 쿼리에서 `+`는 공백으로 읽히므로 `%2B`로 보낸다(`URLSearchParams`가 알아서 바꿔 준다).
+  - 오프셋이 붙은 값은 UTC로 바꿔 처리한다.
+
+- 성공 **200**
+
+  ```json
+  {
+    "from": "2026-10-31T15:00:00.000Z",
+    "to": "2026-11-30T15:00:00.000Z",
+    "events": [
+      {
+        "source": "assignment",
+        "id": 12,
+        "courseName": "자료구조",
+        "title": "과제 1",
+        "dueAt": "2026-11-20T14:59:00.000Z",
+        "url": "https://canvas.example.ac.kr/courses/101/assignments/501"
+      }
+    ]
+  }
+  ```
+
+  | 필드 | 타입 | 설명 |
+  | --- | --- | --- |
+  | `from` · `to` | string | UTC로 바꾼 조회 기간 (`Z`로 끝남) |
+  | `events[].source` | `"assignment"` | 지금은 과제 마감만. 나중에 다른 종류가 붙을 수 있으니 모르는 값은 건너뛴다 |
+  | `events[].id` | number | 우리 서버의 과제 id(Canvas id 아님). `source`와 함께 목록 key로 쓴다 |
+  | `events[].courseName` | string | 과목 이름 (최대 255자) |
+  | `events[].title` | string | 과제 제목 (최대 255자, 없으면 `(제목 없음)`) |
+  | `events[].dueAt` | string | 마감 시각, UTC ISO 8601(`Z`). 화면에서 현지 시각으로 바꿔 보여 준다 |
+  | `events[].url` | string \| null | Canvas 과제 페이지. 우리 학교 Canvas 주소의 https 링크만 오고, 아니면 null |
+
+  - 정렬: `dueAt` 오름차순, 같으면 `id` 오름차순(항상 같은 순서).
+  - 나오지 않는 것: 마감이 없는 과제, Canvas에서 사라진 과제, 다른 사람의 과제, Canvas 연동을 해제했거나 연결하지 않은 사용자(빈 목록, 200).
+
+- 실패: 400 (첫 번째 하나만)
+
+  | `error` | `field` | 언제 |
+  | --- | --- | --- |
+  | `missing_from` · `missing_to` | `from` · `to` | 없음 · 빈 값 |
+  | `invalid_from` · `invalid_to` | `from` · `to` | 형식이 틀림 · 시간대 없음 · 없는 날짜(2월 30일) · 같은 쿼리를 두 번 보냄 |
+  | `invalid_range` | `to` | `to`가 `from`보다 뒤가 아님 |
+  | `range_too_long` | `to` | 92일 초과 |
+
+### Canvas 자료를 화면에 보여 줄 때 (보안)
+
+- 과목 이름 · 과제 제목 · (나중에 생길) 공지 제목 · 본문은 **Canvas에서 온 그대로**다. 교수 · 조교 등 다른 사람이 쓴 글이므로 **`innerHTML`(React의 `dangerouslySetInnerHTML`, Vue의 `v-html`)로 넣지 말 것.** 글자로만 넣는다(`textContent`, React · Vue 기본 바인딩).
+- 공지 본문은 서버에 **Canvas HTML 원본 그대로** 저장되어 있다(정제하지 않음). 공지 API가 생겨 HTML로 보여 줘야 할 때는 반드시 DOMPurify 같은 정제 도구를 거친 뒤에 넣는다.
+- `url`은 서버가 우리 학교 Canvas 주소의 https 링크인지 확인한 값이지만, 새 창으로 열 때는 `rel="noopener noreferrer"`를 붙인다.
+
 ## 3. 소셜 로그인 흐름
 
 ```text
@@ -462,6 +530,10 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 | `canvas_token_rejected` | 400 | Canvas 토큰 등록 | Canvas가 토큰을 거부 | 입력칸에 표시 + 새 토큰을 만들어 다시 넣으라고 안내 |
 | `canvas_unavailable` | 502 | Canvas 토큰 등록 | Canvas 연결 실패 · 오류 | "잠시 후 다시 시도" 표시 |
 | `lms_not_connected` | 404 | Canvas 연동 해제 · 수동 동기화 | 연결된 토큰 없음 | 토큰 입력 화면으로 |
+| `missing_from` · `missing_to` | 400 | 캘린더 | 기간 쿼리 없음 | 프론트 버그. 두 쿼리를 모두 보낸다 |
+| `invalid_from` · `invalid_to` | 400 | 캘린더 | 형식 틀림 · 시간대 없음 · 없는 날짜 | 프론트 버그. `toISOString()` 또는 `+09:00`을 붙여 보낸다 |
+| `invalid_range` | 400 | 캘린더 | `to`가 `from` 이후가 아님 | 프론트 버그 |
+| `range_too_long` | 400 | 캘린더 | 92일 초과 | 달력 보기 단위(월 · 주)로 나눠 부른다 |
 | `lms_needs_reauth` | 409 | 수동 동기화 | 토큰 만료 · 취소 | 토큰을 다시 등록하라고 안내 |
 | `sync_too_frequent` | 429 | 수동 동기화 | 5분 안에 다시 요청 | `Retry-After`(초)만큼 동기화 버튼 비활성화 |
 | `canvas_rate_limited` | 503 | Canvas 토큰 등록 | Canvas 요청 한도 초과 | 위와 같음 |
