@@ -96,11 +96,13 @@ export function createLmsSync({ canvasClient, tokenCipher, tokenRepository, sync
       }
       return fail(scope, err.code, { canvasStatus: err.status, canvasPath: err.path })
     }
-    if (!(await syncRepository.applySnapshot({ ...scope, snapshot, now: at }))) {
+    const applied = await syncRepository.applySnapshot({ ...scope, snapshot, now: at })
+    if (!applied) {
       logger.info({ event: 'lms_sync_discarded', userId, reason: 'token_changed' }, 'token changed during sync, result discarded')
       return { outcome: 'skipped', reason: 'token_changed' }
     }
-    logger.info({ event: 'lms_sync_applied', userId, courses: snapshot.courses.length }, 'lms sync applied')
+    // 알림은 개수만 남긴다(제목 · 본문 · 링크 없음, ADR 0009)
+    logger.info({ event: 'lms_sync_applied', userId, courses: snapshot.courses.length, notifications: applied.notifications }, 'lms sync applied')
     return { outcome: 'applied' }
   }
 
