@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { loadConfigOrExit } from './config.js'
+import { loadLmsConfigOrExit } from './lms/lms-config.js'
 import { createLogger } from './logger.js'
 import { createPool } from './db/pool.js'
 import { createSessionStore } from './session.js'
@@ -10,6 +11,8 @@ import { createDummyPasswordHash } from './accounts/email-account-service.js'
 import { createApp } from './app.js'
 
 const config = loadConfigOrExit()
+// Canvas 설정(주소 · 토큰 암호화 키)은 서버에만 필요하다. DB에 연결하기 전에 검사해 틀리면 키 이름만 출력하고 종료 (ADR 0008)
+const lmsConfig = loadLmsConfigOrExit(process.env, { isProduction: config.isProduction })
 const logger = createLogger({ level: config.logLevel })
 if (config.isProduction && !config.trustProxy) {
   logger.warn({ event: 'trust_proxy_disabled' }, 'production without TRUST_PROXY: Secure cookies are not issued behind a proxy')
