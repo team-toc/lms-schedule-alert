@@ -8,6 +8,7 @@ import { createKakaoClient } from './kakao/kakao-client.js'
 import { createGoogleClient } from './google/google-client.js'
 import { createPasswordHasher } from './email/password-hasher.js'
 import { createDummyPasswordHash } from './accounts/email-account-service.js'
+import { createLmsServices } from './lms/lms-services.js'
 import { createApp } from './app.js'
 
 const config = loadConfigOrExit()
@@ -25,7 +26,8 @@ const googleClient = createGoogleClient({ config: config.google })
 // 없는 이메일 로그인용 가짜 해시: 실제 해시와 같은 모듈 · 파라미터로 시작할 때 한 번만 만든다 (ADR 0007)
 const passwordHasher = createPasswordHasher()
 const dummyPasswordHash = await createDummyPasswordHash(passwordHasher)
-const app = createApp({ config, logger, pool, kakaoClient, googleClient, sessionStore, passwordHasher, dummyPasswordHash })
+const lmsServices = createLmsServices({ pool, logger, lmsConfig })
+const app = createApp({ config, logger, pool, kakaoClient, googleClient, sessionStore, passwordHasher, dummyPasswordHash, lmsServices })
 
 app.listen(config.port, () => {
   logger.info({ port: config.port, trustProxy: config.trustProxy }, 'backend started')

@@ -1,6 +1,6 @@
 # 백엔드 API 설명서
 
-프론트엔드 연동용. 실제 코드(`src/app.js`, `src/auth/*`, `src/email/email-input.js`) 기준으로 쓴다. 라우트를 추가 · 변경하는 커밋에서 이 문서도 같이 고친다(`test/api-doc.test.js`가 문서에 없는 라우트를 잡는다).
+프론트엔드 연동용. 실제 코드(`src/app.js`, `src/auth/*`, `src/email/email-input.js`, `src/lms/*`) 기준으로 쓴다. 라우트를 추가 · 변경하는 커밋에서 이 문서도 같이 고친다(`test/api-doc.test.js`가 문서에 없는 라우트를 잡는다).
 
 - [1. 공통 사항](#1-공통-사항)
 - [2. 엔드포인트](#2-엔드포인트)
@@ -97,18 +97,20 @@ export default defineConfig({
 | --- | --- | --- |
 | 200 | 성공(본문 있음) | `/me`, 이메일 로그인, health |
 | 201 | 이메일 가입 성공 | 이메일 가입 |
+| 202 | 받아들였고 나머지는 백그라운드에서 처리 | Canvas 토큰 등록 |
 | 204 | 로그아웃 성공(본문 없음) | 로그아웃 |
 | 302 | 리다이렉트 | 소셜 로그인 시작 · 콜백 |
 | 400 `invalid_json` | `Content-Type: application/json`인데 본문이 올바른 JSON이 아니거나, 맨 바깥이 객체 · 배열이 아님(`null` 등) | JSON 본문을 받는 모든 API |
-| 400 (검증) | 입력 검증 실패. `field`로 어느 항목인지 알려 준다 | 이메일 가입 · 로그인 |
-| 401 | 로그인 안 됨 / 이미 로그아웃됨 / 이메일 · 비밀번호 틀림 (API마다 `error`가 다름) | `/me`, 로그아웃, 이메일 로그인 |
+| 400 (검증) | 입력 검증 실패. `field`로 어느 항목인지 알려 준다 | 이메일 가입 · 로그인, Canvas 토큰 등록 |
+| 401 | 로그인 안 됨 / 이미 로그아웃됨 / 이메일 · 비밀번호 틀림 (API마다 `error`가 다름) | `/me`, 로그아웃, 이메일 로그인, `/api/lms/*` · `/api/calendar/*` 전체 |
 | 404 `not_found` | `/api` 아래 없는 경로, 또는 있는 경로에 잘못된 메서드(예: `GET /api/auth/logout`). 405로 나누지 않는다 | `/api` 전체 |
 | 409 | 이미 가입된 이메일 | 이메일 가입 |
 | 413 `payload_too_large` | 본문이 100KB를 넘음 | 본문을 받는 모든 API |
-| 415 `unsupported_media_type` | JSON이 아닌 요청 | 이메일 가입 · 로그인만 |
+| 415 `unsupported_media_type` | JSON이 아닌 요청 | 이메일 가입 · 로그인, Canvas 토큰 등록 |
 | 415 `unsupported_charset` · `unsupported_encoding` | JSON 본문의 문자셋이 UTF-8이 아님 · 지원하지 않는 `Content-Encoding` | JSON 본문을 받는 모든 API |
 | 429 | 로그인 실패 횟수 초과. `Retry-After` 헤더(초) | 이메일 로그인만 |
 | 500 | 서버 오류. `requestId` 포함 | 모든 JSON API |
+| 502 · 503 · 504 | Canvas 쪽 문제(연결 실패 · 요청 한도 초과 · 응답 지연). 잠시 후 다시 시도 | Canvas 토큰 등록 |
 
 ## 2. 엔드포인트
 
@@ -123,6 +125,7 @@ export default defineConfig({
 | GET | `/api/auth/kakao/callback` | 아니요 | 카카오가 부르는 콜백(프론트는 부르지 않음) |
 | GET | `/api/auth/google` | 아니요 | Google 로그인 시작(브라우저 이동) |
 | GET | `/api/auth/google/callback` | 아니요 | Google이 부르는 콜백(프론트는 부르지 않음) |
+| POST | `/api/lms/token` | 예 | Canvas 토큰 등록(교체) + 첫 동기화 시작 |
 
 ### GET /api/health
 
@@ -292,6 +295,43 @@ Google이 브라우저를 보내는 주소(Google Cloud 콘솔의 "승인된 리
 
 - 응답은 항상 **302**: 성공 → `FRONTEND_URL`, 실패 → `FRONTEND_URL/login/error?error=<코드>`
 
+### POST /api/lms/token
+
+Canvas 개인 액세스 토큰을 등록한다(이미 있으면 **교체**). 서버가 Canvas에 토큰을 확인한 뒤 **암호화해서** 저장하고, `onboardingStep`을 `done`으로 바꾼 다음, 과목 · 과제 · 공지 **첫 동기화를 백그라운드로** 시작한다. 응답은 동기화가 끝나기 전에 온다.
+
+- 로그인 필요(아니면 401 `not_authenticated`)
+- 요청: `Content-Type: application/json`
+
+  ```json
+  { "token": "1234~AbCdEf..." }
+  ```
+
+  | 필드 | 타입 | 필수 | 규칙 |
+  | --- | --- | --- | --- |
+  | `token` | string | 예 | 앞뒤 공백 제거 후 1 ~ **200자**, 영문 · 숫자 · `~`만. Canvas → 계정 → 설정 → "새 액세스 토큰"에서 만든 값 |
+
+- 성공 **202**
+
+  ```json
+  { "status": "syncing" }
+  ```
+
+  - 토큰 원문은 다시 돌려주지 않는다(어떤 API도 토큰 원문 · 일부를 응답하지 않음). 입력칸 값은 등록 후 바로 지운다.
+  - 첫 동기화 결과는 동기화 상태 API로 확인한다(다음 단계에서 추가).
+
+- 실패 (아무것도 저장하지 않고 `onboardingStep`도 그대로 `lms_token`)
+
+  | 상태 | `error` | `field` | 언제 |
+  | --- | --- | --- | --- |
+  | 400 | `missing_token` | `token` | 없음 · 빈 값 · 공백만 · 문자열이 아님 |
+  | 400 | `token_too_long` | `token` | 200자 초과 |
+  | 400 | `invalid_token_format` | `token` | 영문 · 숫자 · `~` 외의 문자(가운데 공백 · 줄바꿈 포함) |
+  | 400 | `canvas_token_rejected` | `token` | Canvas가 토큰을 거부(잘못됨 · 만료 · 취소 · 권한 없음) |
+  | 415 | `unsupported_media_type` | — | JSON이 아닌 요청 |
+  | 502 | `canvas_unavailable` | — | Canvas에 연결할 수 없음 · Canvas 오류 응답 |
+  | 503 | `canvas_rate_limited` | — | Canvas 요청 한도 초과 |
+  | 504 | `canvas_timeout` | — | Canvas 응답이 10초 안에 오지 않음 |
+
 ## 3. 소셜 로그인 흐름
 
 ```text
@@ -343,14 +383,14 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 ```
 
 - 가입(소셜 첫 로그인 · 이메일 가입) 직후는 항상 `lms_token`.
-- LMS 토큰 등록 API는 아직 없다. 생기면 등록 성공 시 `done`으로 바뀐다(이 문서에 추가 예정).
+- Canvas 토큰 등록(`POST /api/lms/token`)이 성공하면 `done`으로 바뀐다. 등록이 실패하면 그대로 `lms_token`.
 - 값은 앞으로 늘어날 수 있으니, 모르는 값이 오면 홈으로 보내는 등 기본 처리를 둔다.
 
 ## 5. 에러 코드 전체 표
 
 | `error` | 상태 | 어디서 | 의미 | 프론트에서 할 일 |
 | --- | --- | --- | --- | --- |
-| `not_authenticated` | 401 | `GET /me` | 로그인 안 됨 · 세션 만료 · 계정 삭제 | 로그인 화면으로 |
+| `not_authenticated` | 401 | `GET /me`, `/api/lms/*` · `/api/calendar/*` | 로그인 안 됨 · 세션 만료 · 계정 삭제 | 로그인 화면으로 |
 | `already_logged_out` | 401 | `POST /logout` | 이미 로그아웃 상태 | 로그아웃 성공처럼 처리(로그인 화면으로) |
 | `missing_email` | 400 | 이메일 가입 · 로그인 | 이메일 없음 | `field: email` 입력칸에 `message` 표시 |
 | `invalid_email` | 400 | 이메일 가입 · 로그인 | 이메일 형식 틀림 | 위와 같음 |
@@ -362,7 +402,14 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 | `invalid_json` | 400 | JSON 본문을 받는 API | 본문이 올바른 JSON이 아님 | 프론트 버그. `JSON.stringify`로 보내는지 확인 |
 | `invalid_credentials` | 401 | 이메일 로그인 | 이메일 없음 또는 비밀번호 틀림 | `message` 표시(어느 쪽이 틀렸는지 구분하지 말 것) |
 | `email_already_registered` | 409 | 이메일 가입 | 이미 가입된 이메일 | "이미 가입된 이메일입니다" + 로그인 화면 안내 |
-| `unsupported_media_type` | 415 | 이메일 가입 · 로그인 | JSON이 아닌 요청 | 프론트 버그. `Content-Type: application/json` 확인 |
+| `unsupported_media_type` | 415 | 이메일 가입 · 로그인, Canvas 토큰 등록 | JSON이 아닌 요청 | 프론트 버그. `Content-Type: application/json` 확인 |
+| `missing_token` | 400 | Canvas 토큰 등록 | 토큰 없음 | `field: token` 입력칸에 `message` 표시 |
+| `token_too_long` | 400 | Canvas 토큰 등록 | 200자 초과 | 위와 같음 |
+| `invalid_token_format` | 400 | Canvas 토큰 등록 | 허용하지 않는 문자 | 위와 같음(복사할 때 딸려 온 공백 · 따옴표 확인 안내) |
+| `canvas_token_rejected` | 400 | Canvas 토큰 등록 | Canvas가 토큰을 거부 | 입력칸에 표시 + 새 토큰을 만들어 다시 넣으라고 안내 |
+| `canvas_unavailable` | 502 | Canvas 토큰 등록 | Canvas 연결 실패 · 오류 | "잠시 후 다시 시도" 표시 |
+| `canvas_rate_limited` | 503 | Canvas 토큰 등록 | Canvas 요청 한도 초과 | 위와 같음 |
+| `canvas_timeout` | 504 | Canvas 토큰 등록 | Canvas 응답 지연 | 위와 같음 |
 | `unsupported_charset` | 415 | JSON 본문을 받는 API | 문자셋이 UTF-8이 아님 | 프론트 버그. `charset`을 빼거나 `utf-8`로 |
 | `unsupported_encoding` | 415 | JSON 본문을 받는 API | 지원하지 않는 `Content-Encoding` | 프론트 버그. 압축 헤더를 직접 붙이지 말 것 |
 | `payload_too_large` | 413 | 본문을 받는 API | 본문 100KB 초과 | 프론트 버그(정상 요청은 닿지 않음) |

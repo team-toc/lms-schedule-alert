@@ -7,6 +7,8 @@ import { createEmailAccountService } from './accounts/email-account-service.js'
 import { createPasswordHasher } from './email/password-hasher.js'
 import { createLoginThrottle, LOGIN_THROTTLE_MAX_ENTRIES } from './auth/login-throttle.js'
 import { createAuthRouter } from './auth/auth-routes.js'
+import { createRequireUser } from './http/require-user.js'
+import { createLmsRouter } from './lms/lms-routes.js'
 
 const HTTP_NOT_FOUND = 404
 const HTTP_INTERNAL_ERROR = 500
@@ -42,7 +44,7 @@ function createAuthServices(deps) {
 
 // CORS는 열지 않는다. 프론트는 같은 출처(운영: nginx, 개발: Vite 프록시)로 /api를 호출한다.
 export function createApp(deps) {
-  const { config, logger, kakaoClient, googleClient, sessionStore } = deps
+  const { config, logger, kakaoClient, googleClient, sessionStore, lmsServices } = deps
   const app = express()
   if (config.trustProxy) {
     // X-Forwarded-Proto를 믿어 req.secure를 판단해야 프록시 뒤에서 Secure 쿠키가 발급된다
@@ -59,6 +61,9 @@ export function createApp(deps) {
     res.json({ ok: true, time: new Date().toISOString() })
   })
   app.use('/api/auth', createAuthRouter({ config, kakaoClient, googleClient, accountService, emailAccountService, loginThrottle }))
+  // Canvas 연동 · 캘린더는 로그인한 사용자만. 경로 전체에 먼저 걸어, 로그인 전에는 어떤 하위 경로든 401 (ADR 0008)
+  app.use(['/api/lms', '/api/calendar'], createRequireUser({ accountService }))
+  app.use('/api/lms', createLmsRouter(lmsServices))
   app.use('/api', respondNotFound)
 
   app.use(handleUnexpectedError)
