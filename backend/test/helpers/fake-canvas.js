@@ -87,9 +87,24 @@ function announcementsFor(account, url) {
     .filter((a) => new Date(a.posted_at) >= start && new Date(a.posted_at) <= end)
 }
 
-function route(account, url) {
+const STRING_IDS = 'application/json+canvas-string-ids'
+
+// /users/self. Canvas id는 64비트 정수: Accept에 STRING_IDS가 있으면 문자열로, 없으면 실제 Canvas처럼 숫자 그대로 쓴다
+// (id를 문자열로 들고 있다가 따옴표 없이 내보내므로, 2^53을 넘는 id는 JSON.parse에서 정밀도를 잃는다). id가 없으면 빼고 보낸다.
+function selfResponse({ id, ...rest }, init) {
+  if (id === undefined) {
+    return canvasResponse(HTTP_OK, rest)
+  }
+  const accept = new Headers(init.headers).get('accept') ?? ''
+  if (accept.includes(STRING_IDS)) {
+    return canvasResponse(HTTP_OK, { id: String(id), ...rest })
+  }
+  return canvasResponse(HTTP_OK, `{"id":${String(id)},${JSON.stringify(rest).slice(1)}`)
+}
+
+function route(account, url, init) {
   if (url.pathname === '/api/v1/users/self') {
-    return canvasResponse(HTTP_OK, account.self)
+    return selfResponse(account.self, init)
   }
   if (url.pathname === '/api/v1/courses') {
     if (url.searchParams.get('enrollment_state') !== 'active') {
@@ -142,7 +157,7 @@ async function handleRequest(state, input, init = {}) {
   if (!owner) {
     return canvasFailures.unauthorized()
   }
-  const result = route(owner, url)
+  const result = route(owner, url, init)
   return result instanceof Response ? result : paginate(url, result, state.pageSize)
 }
 
@@ -161,6 +176,7 @@ export function createFakeCanvas({ pageSize = DEFAULT_PAGE_SIZE } = {}) {
     fetch: (input, init) => handleRequest(state, input, init),
     requests: state.requests,
     foreignRequests: state.foreignRequests,
+    // id: 숫자, 큰 id는 10진수 문자열('9007199254740993'), 생략하면 /users/self에 id가 없음
     addAccount(token, { id, name = '학생' }) {
       state.accounts.set(token, { self: { id, name }, courses: [], assignments: new Map(), announcements: new Map() })
     },

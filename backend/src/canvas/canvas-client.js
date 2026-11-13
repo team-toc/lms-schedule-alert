@@ -65,13 +65,16 @@ function isTimeout(err) {
   return err?.name === 'TimeoutError' || err?.name === 'AbortError'
 }
 
+// Canvas id는 64비트 정수: 이 Accept면 id를 문자열로 준다(JavaScript가 2^53을 넘는 정수를 정확히 못 다루므로, Canvas API 문서)
+const STRING_IDS_ACCEPT = 'application/json+canvas-string-ids'
+
 // 요청 하나. 성공하면 { body(JSON), res }
-async function requestJson({ fetchFn, timeoutMs }, url, token) {
+async function requestJson({ fetchFn, timeoutMs }, url, token, accept = 'application/json') {
   const path = url.pathname
   let res
   try {
     res = await fetchFn(url.toString(), {
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      headers: { Authorization: `Bearer ${token}`, Accept: accept },
       redirect: 'manual',
       signal: AbortSignal.timeout(timeoutMs),
     })
@@ -139,9 +142,9 @@ export function createCanvasClient({ baseUrl, fetchFn = globalThis.fetch, timeou
     return items
   }
 
-  // 토큰 확인용. 토큰 주인의 Canvas 사용자 정보
+  // 토큰 확인용. 토큰 주인의 Canvas 사용자 정보. id는 문자열로 받는다(계정 비교용, ADR 0009). 과목 · 과제 목록은 아직 숫자 id(후속)
   async function getSelf(token) {
-    const { body, res } = await requestJson(deps, buildUrl('/api/v1/users/self'), token)
+    const { body, res } = await requestJson(deps, buildUrl('/api/v1/users/self'), token, STRING_IDS_ACCEPT)
     if (body === null || typeof body !== 'object' || Array.isArray(body)) {
       throw new CanvasApiError(CANVAS_ERRORS.unavailable, { status: res.status, path: '/api/v1/users/self' })
     }

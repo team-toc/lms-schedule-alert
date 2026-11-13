@@ -36,12 +36,20 @@ describe('Canvas 클라이언트 (경계 레이어)', () => {
   it('getSelf: /api/v1/users/self, 토큰은 Authorization: Bearer 헤더로만 (URL에 없음), 타임아웃 신호를 붙인다', async () => {
     const self = await client.getSelf(TOKEN)
 
-    assert.equal(self.id, 9001)
+    // id는 문자열로 받는다 (Accept: application/json+canvas-string-ids, ADR 0009)
+    assert.equal(self.id, '9001')
     const [req] = canvas.requests
     assert.equal(req.path, '/api/v1/users/self')
     assert.equal(req.token, TOKEN)
     assert.ok(!req.url.toString().includes(TOKEN) && !req.url.searchParams.has('access_token'))
     assert.ok(req.init.signal instanceof AbortSignal, '요청마다 타임아웃 신호')
+    assert.match(new Headers(req.init.headers).get('accept'), /application\/json\+canvas-string-ids/)
+  })
+
+  it('getSelf: 2^53을 넘는 Canvas id도 정밀도 손실 없이 문자열 그대로', async () => {
+    canvas.addAccount('8~big', { id: '9007199254740993' })
+
+    assert.equal((await client.getSelf('8~big')).id, '9007199254740993')
   })
 
   it('3. listActiveCourses: enrollment_state=active · per_page=100, Link rel="next"를 끝까지 따라가 순서대로 모두 돌려준다', async () => {
