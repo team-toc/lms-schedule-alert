@@ -54,6 +54,22 @@ async function withSyncLock(pool, userId, work) {
   }
 }
 
+// 연동 해제: 토큰 행을 먼저 지워(행 잠금) 동시에 돌던 동기화가 반영 직전 확인에서 버리게 하고,
+// 그 사용자의 수강 · 과제 · 공지 연결만 지운다. 공유 행은 그대로. 결과: 지웠으면 true, 연결이 없었으면 false
+function deleteTokenAndLinks({ pool, logger }, userId) {
+  return runInTransaction({ pool, logger }, async (connection) => {
+    const [deleted] = await connection.execute('DELETE FROM lms_tokens WHERE user_id = ?', [userId])
+    if (deleted.affectedRows === 0) {
+      return false
+    }
+    for (const table of ['user_assignments', 'user_announcements', 'enrollments']) {
+      await connection.query('DELETE FROM ?? WHERE user_id = ?', [table, userId])
+    }
+    await connection.execute("UPDATE users SET onboarding_step = 'lms_token' WHERE id = ?", [userId])
+    return true
+  })
+}
+
 export function createLmsTokenRepository(pool, { logger }) {
   async function findToken(userId) {
     const [rows] = await pool.execute(
@@ -89,5 +105,12 @@ export function createLmsTokenRepository(pool, { logger }) {
     return rows.map((row) => row.user_id)
   }
 
-  return { findToken, saveToken, recordFailure, listSyncTargets, withSyncLock: (userId, work) => withSyncLock(pool, userId, work) }
+  return {
+    findToken,
+    saveToken,
+    recordFailure,
+    deleteToken: (userId) => deleteTokenAndLinks({ pool, logger }, userId),
+    listSyncTargets,
+    withSyncLock: (userId, work) => withSyncLock(pool, userId, work),
+  }
 }
