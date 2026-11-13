@@ -34,6 +34,7 @@ describe('Canvas 설정 (loadLmsConfig)', () => {
       canvasBaseUrl: 'https://canvas.example.ac.kr',
       tokenKey: VALID_KEY_BYTES,
       syncIntervalMs: 30 * 60 * 1000,
+      syncConcurrency: 2,
     })
   })
 
