@@ -23,7 +23,7 @@ export function createLmsServices({ pool, logger, lmsConfig, fetchFn = globalThi
     concurrency: lmsConfig.syncConcurrency,
     logger,
   })
-  const tokenService = createTokenService({ canvasClient, tokenCipher, tokenRepository, syncRunner, now })
+  const tokenService = createTokenService({ canvasClient, tokenCipher, tokenRepository, syncRunner, now, logger })
   const manualSync = createManualSync({ tokenRepository, syncRunner, now })
   return { lmsSync, syncRunner, tokenService, manualSync, calendarRepository: createCalendarRepository(pool) }
 }
