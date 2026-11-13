@@ -1,6 +1,6 @@
 # ERD (백엔드 DB)
 
-현재 마이그레이션(`migrations/0001` ~ `0014`) 기준으로 **실제로 있는 테이블만** 그린다. 마이그레이션을 추가하면 같은 커밋에서 이 문서도 고친다. 아직 만들지 않은 일정(`schedules`) · 알림 테이블은 넣지 않는다.
+현재 마이그레이션(`migrations/0001` ~ `0018`) 기준으로 **실제로 있는 테이블만** 그린다. 마이그레이션을 추가하면 같은 커밋에서 이 문서도 고친다. 아직 만들지 않은 일정(`schedules`) · 알림 테이블은 넣지 않는다.
 
 - 문자셋 utf8mb4, 시간 칼럼은 UTC로 저장 (`DATETIME(3)`, 밀리초까지)
 - 마이그레이션 실행 기록 `schema_migrations`는 도구의 장부라 그리지 않는다
@@ -18,6 +18,9 @@ erDiagram
     assignments ||--o{ user_assignments : "연결된 사용자"
     users ||--o{ user_announcements : "보이는 공지 (ON DELETE CASCADE)"
     announcements ||--o{ user_announcements : "연결된 사용자"
+    users ||--o{ notifications : "앱 내 알림 (ON DELETE CASCADE)"
+    assignments ||--o{ notifications : "과제 알림 대상"
+    announcements ||--o{ notifications : "공지 알림 대상"
 
     users {
         bigint_unsigned id PK "AUTO_INCREMENT"
@@ -47,8 +50,10 @@ erDiagram
     lms_tokens {
         bigint_unsigned id PK "AUTO_INCREMENT"
         bigint_unsigned user_id FK "NOT NULL, UNIQUE → users.id"
+        varchar(20) canvas_user_id "NULL, ascii_bin, 토큰 주인의 Canvas 계정 id (/users/self), 10진수 문자열"
         varchar(512) token_enc "NOT NULL, ascii, 'v1:' + base64(IV ‖ 태그 ‖ 암호문), AES-256-GCM (원문 저장 안 함)"
         enum status "NOT NULL, 'syncing' | 'ok' | 'failing' | 'needs_reauth', 기본 'syncing' (값은 맨 뒤에만 추가)"
+        boolean baseline_required "NOT NULL, 기본 TRUE, 다음 동기화는 알림 없이 본 값만 채움"
         datetime(3) connected_at "NOT NULL, 토큰 등록(교체) 시각"
         datetime(3) last_synced_at "NULL, 마지막으로 동기화를 반영한 시각"
         varchar(64) last_error_code "NULL, 마지막 실패의 고정 코드 (예: canvas_rate_limited)"
@@ -84,6 +89,7 @@ erDiagram
         bigint_unsigned user_id PK "FK → users.id"
         bigint_unsigned assignment_id PK "FK → assignments.id"
         datetime(3) due_at "NULL, 이 사용자 기준 마감 (Canvas override 반영, UTC)"
+        varchar(255) seen_title "NULL, 이 사용자가 마지막으로 본 제목 (NULL = 모름)"
         datetime(3) created_at "NOT NULL"
         datetime(3) updated_at "NOT NULL, 자동 갱신"
     }
@@ -105,7 +111,23 @@ erDiagram
     user_announcements {
         bigint_unsigned user_id PK "FK → users.id"
         bigint_unsigned announcement_id PK "FK → announcements.id"
+        varchar(255) seen_title "NULL, 마지막으로 본 제목"
+        char(64) seen_content_hash "NULL, 마지막으로 본 내용 해시"
         datetime(3) created_at "NOT NULL"
+    }
+
+    notifications {
+        bigint_unsigned id PK "AUTO_INCREMENT, 최신순 정렬 · 커서 기준"
+        bigint_unsigned user_id FK "NOT NULL → users.id"
+        enum kind "NOT NULL, assignment_created | assignment_due_changed | assignment_title_changed | assignment_removed | announcement_created | announcement_updated"
+        bigint_unsigned assignment_id FK "NULL → assignments.id (과제 알림)"
+        bigint_unsigned announcement_id FK "NULL → announcements.id (공지 알림), 둘 중 정확히 하나 (CHECK)"
+        datetime(3) before_due_at "NULL, 변경 전 마감 (UTC)"
+        datetime(3) after_due_at "NULL, 변경 후 마감 (UTC)"
+        varchar(255) before_title "NULL, 변경 전 제목"
+        varchar(255) after_title "NULL, 변경 후 제목 (본문은 저장 안 함)"
+        datetime(3) detected_at "NOT NULL, 감지 시각 (합치면 갱신)"
+        datetime(3) read_at "NULL, 읽은 시각 (NULL = 안 읽음)"
     }
 
     sessions {
@@ -130,6 +152,7 @@ erDiagram
 | lms_tokens | PRIMARY | PK | `id` |
 | lms_tokens | `uq_lms_tokens_user` | UNIQUE | `user_id` (사용자 하나에 토큰 하나) |
 | lms_tokens | `fk_lms_tokens_user` | FK | `user_id` → `users.id`, ON DELETE CASCADE |
+| lms_tokens | `chk_lms_tokens_canvas_user_id` | CHECK | `canvas_user_id`는 NULL 또는 앞자리 0 없는 10진수 (1 ~ 20자리) |
 | courses | PRIMARY | PK | `id` |
 | courses | `uq_courses_canvas_course` | UNIQUE | `canvas_course_id` |
 | enrollments | PRIMARY | PK (복합) | `user_id`, `course_id` (사용자 기준 조회에도 쓰임) |
@@ -152,6 +175,15 @@ erDiagram
 | user_announcements | `idx_user_announcements_announcement` | 인덱스 | `announcement_id` |
 | user_announcements | `fk_user_announcements_user` | FK | `user_id` → `users.id`, ON DELETE CASCADE |
 | user_announcements | `fk_user_announcements_announcement` | FK | `announcement_id` → `announcements.id` (CASCADE 아님) |
+| notifications | PRIMARY | PK | `id` |
+| notifications | `idx_notifications_user_list` | 인덱스 (복합) | `user_id`, `id` (내 알림 최신순 목록 · 커서) |
+| notifications | `idx_notifications_user_unread` | 인덱스 (복합) | `user_id`, `read_at`, `id` (안 읽은 목록 · 전체 읽음) |
+| notifications | `idx_notifications_merge_assignment` | 인덱스 (복합) | `user_id`, `assignment_id`, `kind`, `read_at` (안 읽은 같은 과제 알림 합치기) |
+| notifications | `idx_notifications_merge_announcement` | 인덱스 (복합) | `user_id`, `announcement_id`, `kind`, `read_at` (안 읽은 같은 공지 알림 합치기) |
+| notifications | `idx_notifications_assignment` · `idx_notifications_announcement` | 인덱스 | `assignment_id` · `announcement_id` (FK) |
+| notifications | `chk_notifications_one_target` | CHECK | `assignment_id`와 `announcement_id` 중 정확히 하나만 값 |
+| notifications | `fk_notifications_user` | FK | `user_id` → `users.id`, ON DELETE CASCADE |
+| notifications | `fk_notifications_assignment` · `fk_notifications_announcement` | FK | → `assignments.id` · `announcements.id` (CASCADE 아님) |
 | sessions | PRIMARY | PK | `session_id` |
 | sessions | `idx_sessions_expires` | 인덱스 | `expires` (만료 세션 정리용) |
 
@@ -176,3 +208,11 @@ erDiagram
 - 탈퇴 · 토큰 삭제로 연결이 하나도 없는 공유 행이 남을 수 있다. 조회는 항상 사용자 연결 표를 거치므로 노출되지 않는다. 정리 작업은 범위 밖.
 - `lms_tokens.token_enc`는 암호문만 저장한다. 원문 · 일부 · 해시 칼럼은 없다.
 - 되돌리기 보호: 0008 ~ 0014의 down은 **테이블에 행이 있으면 실패**하고 지우지 않는다(`SIGNAL`). 되돌리는 순서가 0014 → 0008이라 연결 행이 있으면 첫 단계에서 멈춘다.
+
+### 변경 감지 · 알림 (0015 ~ 0018, ADR 0009)
+
+- **알림 = 사용자별 변경 기록**. `notifications` 한 테이블에 종류 · 대상(과제 또는 공지) · 전/후 값(마감 · 제목)을 둔다. 공지 본문은 저장하지 않는다.
+- **사용자별 "본 값"**: 제목 · 공지 내용은 공유 행에만 있어, 먼저 동기화한 사용자가 공유 행을 바꾸면 나중 사용자는 이전 값을 볼 수 없다. 그래서 연결 표에 사용자가 마지막으로 본 값(`user_assignments.seen_title`, `user_announcements.seen_title` · `seen_content_hash`)을 두고 그것과 비교한다. 마감은 원래 사용자별(`user_assignments.due_at`). NULL은 "모름"(알림 없이 채움).
+- `lms_tokens.canvas_user_id` · `baseline_required`: 같은 Canvas 계정으로 재등록 · 교체하면 기준 동기화를 하지 않아 끊긴 동안의 변경도 알린다. 다른 계정 · 계정 id 없음 · 새 등록은 기준 동기화(알림 없음)이고, 다른 계정으로 교체하면 이전 알림도 같은 트랜잭션에서 지운다. 기존 행은 기본값 TRUE.
+- `canvas_user_id`는 **문자열**(`VARCHAR(20)`, `ascii_bin`): Canvas id는 64비트 정수라 2^53을 넘을 수 있는데, JS Number와 mysql2의 BIGINT 읽기(기본 Number)가 모두 정밀도를 잃는다. Canvas에는 `Accept: application/json+canvas-string-ids`로 문자열 id를 받고, 저장 · 비교 모두 문자열로 한다.
+- 되돌리기 보호: 0015 ~ 0018의 down은 값(알림 행 · 본 값 · 계정 id)이 있으면 실패하고 지우지 않는다.
