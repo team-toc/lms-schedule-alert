@@ -131,6 +131,9 @@ export default defineConfig({
 | GET | `/api/lms/status` | 예 | Canvas 연동 · 동기화 상태 |
 | POST | `/api/lms/sync` | 예 | 지금 동기화(5분에 한 번) |
 | GET | `/api/calendar/events` | 예 | 기간 안의 내 과제 마감 |
+| GET | `/api/notifications` | 예 | 내 알림(Canvas 변경) 목록, 최신순 |
+| POST | `/api/notifications/read-all` | 예 | 내 알림 전부 읽음 |
+| POST | `/api/notifications/:id/read` | 예 | 알림 하나 읽음 |
 
 ### GET /api/health
 
@@ -447,9 +450,97 @@ Canvas 연동 · 동기화 상태. 토큰 등록 직후에는 이걸 몇 초 간
   | `invalid_range` | `to` | `to`가 `from`보다 뒤가 아님 |
   | `range_too_long` | `to` | 92일 초과 |
 
+### GET /api/notifications
+
+동기화 때 감지한 **내** Canvas 변경 알림(앱 안 알림함). 푸시 · 메일은 보내지 않는다. 동기화된 자료를 읽기만 한다.
+
+- 로그인 필요
+- 요청: 쿼리 모두 선택
+
+  ```text
+  GET /api/notifications?unread=true&limit=20
+  GET /api/notifications?limit=20&cursor=MzA
+  ```
+
+  | 쿼리 | 규칙 |
+  | --- | --- |
+  | `unread` | `true`(안 읽은 것만) 또는 `false`(전부, 기본) |
+  | `limit` | 1 ~ 50 정수, 기본 20 |
+  | `cursor` | 앞 페이지 응답의 `nextCursor`를 **그대로**. 직접 만들지 말 것(불투명 값). 다음 페이지도 같은 `unread` · `limit`으로 부른다 |
+
+- 성공 **200**
+
+  ```json
+  {
+    "notifications": [
+      {
+        "id": 31,
+        "kind": "assignment_due_changed",
+        "courseName": "자료구조",
+        "title": "과제 1",
+        "before": { "dueAt": "2026-11-20T14:59:00.000Z" },
+        "after": { "dueAt": "2026-11-27T14:59:00.000Z" },
+        "detectedAt": "2026-11-13T03:00:00.000Z",
+        "read": false,
+        "url": "https://canvas.example.ac.kr/courses/101/assignments/501"
+      }
+    ],
+    "nextCursor": "MzA"
+  }
+  ```
+
+  | 필드 | 타입 | 설명 |
+  | --- | --- | --- |
+  | `notifications[].id` | number | 알림 id. 읽음 처리에 쓴다 |
+  | `notifications[].kind` | string | 아래 표. 나중에 종류가 늘 수 있으니 모르는 값은 건너뛴다 |
+  | `notifications[].courseName` | string | 과목 이름 |
+  | `notifications[].title` | string | 과제 · 공지의 지금 제목 |
+  | `notifications[].before` · `after` | object \| null | 바뀌기 전 · 후 값(아래 표). 마감은 UTC ISO 8601(`Z`), `dueAt: null`은 "마감 없음" |
+  | `notifications[].detectedAt` | string | 감지 시각(UTC). 같은 변경이 읽기 전에 또 바뀌면 한 알림으로 합쳐지고 이 시각만 새로 바뀐다 |
+  | `notifications[].read` | boolean | 읽음 여부 |
+  | `notifications[].url` | string \| null | Canvas 과제 · 공지 페이지(우리 학교 Canvas의 https 링크만, 아니면 null) |
+  | `nextCursor` | string \| null | 다음 페이지가 있으면 값, 마지막 페이지면 null |
+
+  | `kind` | 뜻 | `before` | `after` |
+  | --- | --- | --- | --- |
+  | `assignment_created` | 새 과제 | null | `{ dueAt }` |
+  | `assignment_due_changed` | 마감 변경(생김 · 없어짐 포함) | `{ dueAt }` | `{ dueAt }` |
+  | `assignment_title_changed` | 과제 제목 변경 | `{ title }` | `{ title }` |
+  | `assignment_removed` | 과제가 Canvas에서 사라짐 | `{ dueAt }` | null |
+  | `announcement_created` | 새 공지 | null | null |
+  | `announcement_updated` | 공지 수정(본문만 바뀌면 제목 전 = 후) | `{ title }` | `{ title }` |
+
+  - 정렬: 최신순(`id` 내림차순). 합쳐진 알림은 처음 자리에 남는다.
+  - **공지 본문은 오지 않는다.** 공지 내용은 `url`로 Canvas에서 본다.
+  - 알리지 않는 것: Canvas 연동 직후 첫 동기화 · 다른 Canvas 계정으로 바꾼 직후 · 새로 수강한 과목의 기존 과제 · 공지, 마감이 이미 지난 과제의 변경, 수강이 끝난 과목의 과제.
+  - Canvas 연동을 해제하거나 다른 Canvas 계정 토큰으로 바꾸면 그때까지의 알림은 지워진다.
+
+- 실패: 400
+
+  | `error` | 언제 |
+  | --- | --- |
+  | `invalid_cursor` | `cursor`가 받은 값이 아님(형식 틀림 · 두 번 보냄 등) |
+  | `invalid_limit` | 1 ~ 50 정수가 아님 |
+  | `invalid_unread` | `true` · `false`가 아님 |
+
+### POST /api/notifications/read-all
+
+내 알림을 전부 읽음으로. 본문 없음.
+
+- 로그인 필요
+- 성공 **204** (본문 없음). 읽을 알림이 없어도 204
+
+### POST /api/notifications/:id/read
+
+알림 하나를 읽음으로. 본문 없음.
+
+- 로그인 필요
+- 성공 **204** (본문 없음). 이미 읽은 알림도 204(읽은 시각은 처음 값 그대로)
+- 실패: **404** `notification_not_found` — 없는 id, **다른 사람의 알림**, 숫자가 아닌 id 모두 같은 응답
+
 ### Canvas 자료를 화면에 보여 줄 때 (보안)
 
-- 과목 이름 · 과제 제목 · (나중에 생길) 공지 제목 · 본문은 **Canvas에서 온 그대로**다. 교수 · 조교 등 다른 사람이 쓴 글이므로 **`innerHTML`(React의 `dangerouslySetInnerHTML`, Vue의 `v-html`)로 넣지 말 것.** 글자로만 넣는다(`textContent`, React · Vue 기본 바인딩).
+- 과목 이름 · 과제 제목 · 알림의 제목(`title` · `before.title` · `after.title`) · (나중에 생길) 공지 본문은 **Canvas에서 온 그대로**다. 교수 · 조교 등 다른 사람이 쓴 글이므로 **`innerHTML`(React의 `dangerouslySetInnerHTML`, Vue의 `v-html`)로 넣지 말 것.** 글자로만 넣는다(`textContent`, React · Vue 기본 바인딩).
 - 공지 본문은 서버에 **Canvas HTML 원본 그대로** 저장되어 있다(정제하지 않음). 공지 API가 생겨 HTML로 보여 줘야 할 때는 반드시 DOMPurify 같은 정제 도구를 거친 뒤에 넣는다.
 - `url`은 서버가 우리 학교 Canvas 주소의 https 링크인지 확인한 값이지만, 새 창으로 열 때는 `rel="noopener noreferrer"`를 붙인다.
 
@@ -511,7 +602,7 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 
 | `error` | 상태 | 어디서 | 의미 | 프론트에서 할 일 |
 | --- | --- | --- | --- | --- |
-| `not_authenticated` | 401 | `GET /me`, `/api/lms/*` · `/api/calendar/*` | 로그인 안 됨 · 세션 만료 · 계정 삭제 | 로그인 화면으로 |
+| `not_authenticated` | 401 | `GET /me`, `/api/lms/*` · `/api/calendar/*` · `/api/notifications/*` | 로그인 안 됨 · 세션 만료 · 계정 삭제 | 로그인 화면으로 |
 | `already_logged_out` | 401 | `POST /logout` | 이미 로그아웃 상태 | 로그아웃 성공처럼 처리(로그인 화면으로) |
 | `missing_email` | 400 | 이메일 가입 · 로그인 | 이메일 없음 | `field: email` 입력칸에 `message` 표시 |
 | `invalid_email` | 400 | 이메일 가입 · 로그인 | 이메일 형식 틀림 | 위와 같음 |
@@ -534,6 +625,10 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 | `invalid_from` · `invalid_to` | 400 | 캘린더 | 형식 틀림 · 시간대 없음 · 없는 날짜 | 프론트 버그. `toISOString()` 또는 `+09:00`을 붙여 보낸다 |
 | `invalid_range` | 400 | 캘린더 | `to`가 `from` 이후가 아님 | 프론트 버그 |
 | `range_too_long` | 400 | 캘린더 | 92일 초과 | 달력 보기 단위(월 · 주)로 나눠 부른다 |
+| `invalid_cursor` | 400 | 알림 목록 | 커서가 받은 값이 아님 | 프론트 버그. `nextCursor`를 그대로 보낸다(없으면 첫 페이지부터) |
+| `invalid_limit` | 400 | 알림 목록 | `limit`이 1 ~ 50 정수가 아님 | 프론트 버그 |
+| `invalid_unread` | 400 | 알림 목록 | `unread`가 `true` · `false`가 아님 | 프론트 버그 |
+| `notification_not_found` | 404 | 알림 읽음 | 없는 알림 · 다른 사람의 알림 | 목록을 새로 불러온다 |
 | `lms_needs_reauth` | 409 | 수동 동기화 | 토큰 만료 · 취소 | 토큰을 다시 등록하라고 안내 |
 | `sync_too_frequent` | 429 | 수동 동기화 | 5분 안에 다시 요청 | `Retry-After`(초)만큼 동기화 버튼 비활성화 |
 | `canvas_rate_limited` | 503 | Canvas 토큰 등록 | Canvas 요청 한도 초과 | 위와 같음 |

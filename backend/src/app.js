@@ -10,6 +10,7 @@ import { createAuthRouter } from './auth/auth-routes.js'
 import { createRequireUser } from './http/require-user.js'
 import { createLmsRouter } from './lms/lms-routes.js'
 import { createCalendarRouter } from './calendar/calendar-routes.js'
+import { createNotificationRouter } from './notifications/notification-routes.js'
 
 const HTTP_NOT_FOUND = 404
 const HTTP_INTERNAL_ERROR = 500
@@ -62,10 +63,11 @@ export function createApp(deps) {
     res.json({ ok: true, time: new Date().toISOString() })
   })
   app.use('/api/auth', createAuthRouter({ config, kakaoClient, googleClient, accountService, emailAccountService, loginThrottle }))
-  // Canvas 연동 · 캘린더는 로그인한 사용자만. 경로 전체에 먼저 걸어, 로그인 전에는 어떤 하위 경로든 401 (ADR 0008)
-  app.use(['/api/lms', '/api/calendar'], createRequireUser({ accountService }))
+  // Canvas 연동 · 캘린더 · 알림은 로그인한 사용자만. 경로 전체에 먼저 걸어, 로그인 전에는 어떤 하위 경로든 401 (ADR 0008 · 0009)
+  app.use(['/api/lms', '/api/calendar', '/api/notifications'], createRequireUser({ accountService }))
   app.use('/api/lms', createLmsRouter(lmsServices))
   app.use('/api/calendar', createCalendarRouter(lmsServices))
+  app.use('/api', createNotificationRouter(lmsServices))
   app.use('/api', respondNotFound)
 
   app.use(handleUnexpectedError)
