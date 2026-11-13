@@ -9,6 +9,7 @@ import { createLoginThrottle, LOGIN_THROTTLE_MAX_ENTRIES } from './auth/login-th
 import { createAuthRouter } from './auth/auth-routes.js'
 import { createRequireUser } from './http/require-user.js'
 import { createLmsRouter } from './lms/lms-routes.js'
+import { createCalendarRouter } from './calendar/calendar-routes.js'
 
 const HTTP_NOT_FOUND = 404
 const HTTP_INTERNAL_ERROR = 500
@@ -64,6 +65,7 @@ export function createApp(deps) {
   // Canvas 연동 · 캘린더는 로그인한 사용자만. 경로 전체에 먼저 걸어, 로그인 전에는 어떤 하위 경로든 401 (ADR 0008)
   app.use(['/api/lms', '/api/calendar'], createRequireUser({ accountService }))
   app.use('/api/lms', createLmsRouter(lmsServices))
+  app.use('/api/calendar', createCalendarRouter(lmsServices))
   app.use('/api', respondNotFound)
 
   app.use(handleUnexpectedError)

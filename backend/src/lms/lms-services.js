@@ -8,6 +8,7 @@ import { createLmsSync } from './lms-sync.js'
 import { createSyncRunner } from './sync-runner.js'
 import { createTokenService } from './token-service.js'
 import { createManualSync } from './manual-sync.js'
+import { createCalendarRepository } from '../calendar/calendar-repository.js'
 
 export function createLmsServices({ pool, logger, lmsConfig, fetchFn = globalThis.fetch, now = () => new Date() }) {
   const canvasClient = createCanvasClient({ baseUrl: lmsConfig.canvasBaseUrl, fetchFn })
@@ -24,5 +25,5 @@ export function createLmsServices({ pool, logger, lmsConfig, fetchFn = globalThi
   })
   const tokenService = createTokenService({ canvasClient, tokenCipher, tokenRepository, syncRunner, now })
   const manualSync = createManualSync({ tokenRepository, syncRunner, now })
-  return { lmsSync, syncRunner, tokenService, manualSync }
+  return { lmsSync, syncRunner, tokenService, manualSync, calendarRepository: createCalendarRepository(pool) }
 }
