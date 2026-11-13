@@ -110,6 +110,17 @@ describe('백그라운드 동기화의 예상 밖 에러', () => {
     await a.agent.get('/api/auth/me').expect(200)
   })
 
+  it('수동 동기화(POST /api/lms/sync)에서 DB 에러 → 202 응답 후 failing · internal_error, 앱은 계속 응답한다', async () => {
+    const { agent, userId } = await connectUser(built, { email: 'a@example.com', token: TOKEN_A })
+    fault.active = true
+
+    await agent.post('/api/lms/sync').expect(202)
+    await built.lms.syncRunner.whenIdle()
+
+    assert.equal((await tokenRow(ctx.pool, userId)).last_error_code, 'internal_error')
+    assert.equal((await agent.get('/api/lms/status').expect(200)).body.status, 'failing')
+  })
+
   it('로그에는 사건 이름 · 에러 이름 · 코드만 남고, 에러 메시지(SQL 값이 들어갈 수 있음)는 남지 않는다', async () => {
     const { userId } = await connectUser(built, { email: 'a@example.com', token: TOKEN_A })
     fault.active = true

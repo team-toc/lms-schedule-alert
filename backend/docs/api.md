@@ -97,18 +97,19 @@ export default defineConfig({
 | --- | --- | --- |
 | 200 | 성공(본문 있음) | `/me`, 이메일 로그인, health |
 | 201 | 이메일 가입 성공 | 이메일 가입 |
-| 202 | 받아들였고 나머지는 백그라운드에서 처리 | Canvas 토큰 등록 |
-| 204 | 로그아웃 성공(본문 없음) | 로그아웃 |
+| 202 | 받아들였고 나머지는 백그라운드에서 처리 | Canvas 토큰 등록 · 수동 동기화 |
+| 204 | 성공(본문 없음) | 로그아웃 · Canvas 연동 해제 |
 | 302 | 리다이렉트 | 소셜 로그인 시작 · 콜백 |
 | 400 `invalid_json` | `Content-Type: application/json`인데 본문이 올바른 JSON이 아니거나, 맨 바깥이 객체 · 배열이 아님(`null` 등) | JSON 본문을 받는 모든 API |
 | 400 (검증) | 입력 검증 실패. `field`로 어느 항목인지 알려 준다 | 이메일 가입 · 로그인, Canvas 토큰 등록 |
 | 401 | 로그인 안 됨 / 이미 로그아웃됨 / 이메일 · 비밀번호 틀림 (API마다 `error`가 다름) | `/me`, 로그아웃, 이메일 로그인, `/api/lms/*` · `/api/calendar/*` 전체 |
 | 404 `not_found` | `/api` 아래 없는 경로, 또는 있는 경로에 잘못된 메서드(예: `GET /api/auth/logout`). 405로 나누지 않는다 | `/api` 전체 |
-| 409 | 이미 가입된 이메일 | 이메일 가입 |
+| 404 `lms_not_connected` | Canvas를 연결하지 않았는데 해제 · 동기화를 요청 | Canvas 연동 해제 · 수동 동기화 |
+| 409 | 이미 가입된 이메일 / Canvas 토큰을 다시 등록해야 함 | 이메일 가입, 수동 동기화 |
 | 413 `payload_too_large` | 본문이 100KB를 넘음 | 본문을 받는 모든 API |
 | 415 `unsupported_media_type` | JSON이 아닌 요청 | 이메일 가입 · 로그인, Canvas 토큰 등록 |
 | 415 `unsupported_charset` · `unsupported_encoding` | JSON 본문의 문자셋이 UTF-8이 아님 · 지원하지 않는 `Content-Encoding` | JSON 본문을 받는 모든 API |
-| 429 | 로그인 실패 횟수 초과. `Retry-After` 헤더(초) | 이메일 로그인만 |
+| 429 | 로그인 실패 횟수 초과 / 수동 동기화 5분 제한. `Retry-After` 헤더(초) | 이메일 로그인, 수동 동기화 |
 | 500 | 서버 오류. `requestId` 포함 | 모든 JSON API |
 | 502 · 503 · 504 | Canvas 쪽 문제(연결 실패 · 요청 한도 초과 · 응답 지연). 잠시 후 다시 시도 | Canvas 토큰 등록 |
 
@@ -126,6 +127,9 @@ export default defineConfig({
 | GET | `/api/auth/google` | 아니요 | Google 로그인 시작(브라우저 이동) |
 | GET | `/api/auth/google/callback` | 아니요 | Google이 부르는 콜백(프론트는 부르지 않음) |
 | POST | `/api/lms/token` | 예 | Canvas 토큰 등록(교체) + 첫 동기화 시작 |
+| DELETE | `/api/lms/token` | 예 | Canvas 연동 해제(토큰 · 내 연결 삭제) |
+| GET | `/api/lms/status` | 예 | Canvas 연동 · 동기화 상태 |
+| POST | `/api/lms/sync` | 예 | 지금 동기화(5분에 한 번) |
 
 ### GET /api/health
 
@@ -317,7 +321,7 @@ Canvas 개인 액세스 토큰을 등록한다(이미 있으면 **교체**). 서
   ```
 
   - 토큰 원문은 다시 돌려주지 않는다(어떤 API도 토큰 원문 · 일부를 응답하지 않음). 입력칸 값은 등록 후 바로 지운다.
-  - 첫 동기화 결과는 동기화 상태 API로 확인한다(다음 단계에서 추가).
+  - 첫 동기화 결과는 [`GET /api/lms/status`](#get-apilmsstatus)로 확인한다(`syncing` → `ok` 또는 `failing` · `needs_reauth`).
 
 - 실패 (아무것도 저장하지 않고 `onboardingStep`도 그대로 `lms_token`)
 
@@ -331,6 +335,55 @@ Canvas 개인 액세스 토큰을 등록한다(이미 있으면 **교체**). 서
   | 502 | `canvas_unavailable` | — | Canvas에 연결할 수 없음 · Canvas 오류 응답 |
   | 503 | `canvas_rate_limited` | — | Canvas 요청 한도 초과 |
   | 504 | `canvas_timeout` | — | Canvas 응답이 10초 안에 오지 않음 |
+
+### DELETE /api/lms/token
+
+Canvas 연동을 해제한다. 저장된 토큰과 **내** 과목 · 과제 · 공지 연결을 지우고 `onboardingStep`을 `lms_token`으로 되돌린다. 다른 사용자와 함께 쓰는 과목 · 과제 · 공지 자료는 남는다. 해제하면 주기 동기화에서도 빠진다. 해제하는 순간 돌고 있던 동기화는 결과를 반영하지 않는다.
+
+- 로그인 필요 · 본문 없음
+- 성공 **204** (본문 없음)
+- 실패: 404 `lms_not_connected` (연결된 토큰이 없음)
+
+### GET /api/lms/status
+
+Canvas 연동 · 동기화 상태. 토큰 등록 직후에는 이걸 몇 초 간격으로 불러 첫 동기화가 끝났는지 본다.
+
+- 로그인 필요
+- 성공 **200**
+
+  ```json
+  { "status": "ok", "connectedAt": "2026-11-13T00:00:00.000Z", "lastSyncedAt": "2026-11-13T00:00:05.120Z", "lastErrorCode": null }
+  ```
+
+  연결하지 않았으면 `{ "status": "not_connected" }`만 온다.
+
+  | `status` | 뜻 | 프론트 |
+  | --- | --- | --- |
+  | `not_connected` | 토큰을 등록하지 않음 | 토큰 입력 화면 |
+  | `syncing` | 등록(교체)했고 첫 동기화가 아직 안 끝남 | "불러오는 중" 표시 후 다시 확인 |
+  | `ok` | 마지막 동기화 성공 | 정상 |
+  | `failing` | 마지막 동기화 실패. 다음 주기(기본 30분)에 다시 시도한다 | `lastErrorCode`에 따라 "Canvas 연결이 잠시 안 됩니다" 등 안내. 그동안 화면은 마지막으로 성공한 자료 |
+  | `needs_reauth` | Canvas가 토큰을 거부(만료 · 취소). 주기 동기화에서 빠짐 | 토큰을 다시 등록하라고 안내 |
+
+  | 필드 | 타입 | 설명 |
+  | --- | --- | --- |
+  | `connectedAt` | string (UTC ISO 8601) | 토큰을 등록(교체)한 시각 |
+  | `lastSyncedAt` | string \| null | 마지막으로 동기화를 **반영한** 시각. 첫 동기화 전이면 null |
+  | `lastErrorCode` | string \| null | 마지막 실패의 코드(`canvas_unavailable` · `canvas_timeout` · `canvas_rate_limited` · `canvas_forbidden` · `canvas_unauthorized` · `internal_error` 등). 성공하면 null |
+
+### POST /api/lms/sync
+
+지금 동기화를 요청한다. 응답은 바로 오고 동기화는 백그라운드에서 돈다(결과는 상태 API로 확인). 사용자당 **5분에 한 번**.
+
+- 로그인 필요 · 본문 없음
+- 성공 **202** `{ "status": "ok" }` (요청 시점의 상태)
+- 실패
+
+  | 상태 | `error` | 언제 |
+  | --- | --- | --- |
+  | 404 | `lms_not_connected` | 연결된 토큰이 없음 |
+  | 409 | `lms_needs_reauth` | 토큰을 다시 등록해야 함 |
+  | 429 | `sync_too_frequent` | 5분 안에 다시 요청. `Retry-After` 헤더(초) |
 
 ## 3. 소셜 로그인 흐름
 
@@ -408,6 +461,9 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 | `invalid_token_format` | 400 | Canvas 토큰 등록 | 허용하지 않는 문자 | 위와 같음(복사할 때 딸려 온 공백 · 따옴표 확인 안내) |
 | `canvas_token_rejected` | 400 | Canvas 토큰 등록 | Canvas가 토큰을 거부 | 입력칸에 표시 + 새 토큰을 만들어 다시 넣으라고 안내 |
 | `canvas_unavailable` | 502 | Canvas 토큰 등록 | Canvas 연결 실패 · 오류 | "잠시 후 다시 시도" 표시 |
+| `lms_not_connected` | 404 | Canvas 연동 해제 · 수동 동기화 | 연결된 토큰 없음 | 토큰 입력 화면으로 |
+| `lms_needs_reauth` | 409 | 수동 동기화 | 토큰 만료 · 취소 | 토큰을 다시 등록하라고 안내 |
+| `sync_too_frequent` | 429 | 수동 동기화 | 5분 안에 다시 요청 | `Retry-After`(초)만큼 동기화 버튼 비활성화 |
 | `canvas_rate_limited` | 503 | Canvas 토큰 등록 | Canvas 요청 한도 초과 | 위와 같음 |
 | `canvas_timeout` | 504 | Canvas 토큰 등록 | Canvas 응답 지연 | 위와 같음 |
 | `unsupported_charset` | 415 | JSON 본문을 받는 API | 문자셋이 UTF-8이 아님 | 프론트 버그. `charset`을 빼거나 `utf-8`로 |
@@ -429,6 +485,8 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 지금 코드의 동작이다. 바뀌면 이 문서도 고친다.
 
 - 로그인 실패 횟수 기록은 서버 메모리에 있어 서버를 재시작하면 초기화된다.
+- 수동 동기화 5분 제한 기록도 서버 메모리에 있어 재시작하면 초기화된다.
+- Canvas 주기 동기화는 서버가 시작하고 한 주기(기본 30분) 뒤에 처음 돈다. 동시에 도는 동기화 수에 상한(기본 2)이 있어, 요청이 몰리면 상태가 잠깐 `syncing` 또는 이전 값으로 남을 수 있다.
 
 ## 7. 프론트와 정해야 할 것
 

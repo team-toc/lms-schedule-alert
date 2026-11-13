@@ -33,5 +33,19 @@ export function createTokenService({ canvasClient, tokenCipher, tokenRepository,
     return { ok: true }
   }
 
-  return { registerToken }
+  // 상태 응답: 시각은 UTC ISO. 토큰 · 암호문은 넣지 않는다
+  async function getStatus(userId) {
+    const state = await tokenRepository.findToken(userId)
+    if (!state) {
+      return { status: 'not_connected' }
+    }
+    return {
+      status: state.status,
+      connectedAt: state.connectedAt.toISOString(),
+      lastSyncedAt: state.lastSyncedAt?.toISOString() ?? null,
+      lastErrorCode: state.lastErrorCode,
+    }
+  }
+
+  return { registerToken, getStatus, deleteToken: (userId) => tokenRepository.deleteToken(userId) }
 }
