@@ -131,6 +131,9 @@ export default defineConfig({
 | GET | `/api/lms/status` | 예 | Canvas 연동 · 동기화 상태 |
 | POST | `/api/lms/sync` | 예 | 지금 동기화(5분에 한 번) |
 | GET | `/api/calendar/events` | 예 | 기간 안의 내 과제 마감 |
+| POST | `/api/calendar/schedules` | 예 | 앱 일정 만들기 |
+| PATCH | `/api/calendar/schedules/:id` | 예 | 앱 일정 수정 |
+| DELETE | `/api/calendar/schedules/:id` | 예 | 앱 일정 삭제 |
 | GET | `/api/notifications` | 예 | 내 알림(Canvas 변경) 목록, 최신순 |
 | POST | `/api/notifications/read-all` | 예 | 내 알림 전부 읽음 |
 | POST | `/api/notifications/:id/read` | 예 | 알림 하나 읽음 |
@@ -450,6 +453,81 @@ Canvas 연동 · 동기화 상태. 토큰 등록 직후에는 이걸 몇 초 간
   | `invalid_range` | `to` | `to`가 `from`보다 뒤가 아님 |
   | `range_too_long` | `to` | 92일 초과 |
 
+### POST /api/calendar/schedules
+
+앱에서 직접 만드는 내 일정. (iCloud 등에서 가져온 일정은 원래 캘린더에서 바꾼다.)
+
+- 로그인 필요
+- 요청 본문
+
+  ```json
+  { "title": "팀 회의", "startAt": "2026-11-20T10:00:00+09:00", "endAt": "2026-11-20T11:30:00+09:00" }
+  { "title": "시험 기간", "startAt": "2026-11-20", "endAt": "2026-11-23", "isAllDay": true }
+  ```
+
+  | 칸 | 규칙 |
+  | --- | --- |
+  | `title` | 필수, 앞뒤 공백을 지운 뒤 1 ~ 255자(이모지도 한 글자) |
+  | `isAllDay` | 선택, `true` · `false`(기본 `false`) |
+  | `startAt` · `endAt` | `isAllDay: false`: **시간대가 붙은** ISO 8601 시각(캘린더 `from` · `to`와 같은 규칙, 시간대 없으면 400). `isAllDay: true`: 날짜 `YYYY-MM-DD`, `endAt`은 **마지막 날 다음 날**(미포함, 하루짜리는 `2026-11-20` ~ `2026-11-21`). 하루 종일은 한국 시간(Asia/Seoul) 자정 기준 |
+  | | `startAt` < `endAt` (같으면 400) |
+
+- 성공 **201**: 일정 항목
+
+  ```json
+  {
+    "source": "app",
+    "id": 7,
+    "calendarLinkId": null,
+    "title": "팀 회의",
+    "startAt": "2026-11-20T01:00:00.000Z",
+    "endAt": "2026-11-20T02:30:00.000Z",
+    "isAllDay": false,
+    "startDate": null,
+    "endDate": null
+  }
+  ```
+
+  | 필드 | 타입 | 설명 |
+  | --- | --- | --- |
+  | `source` | string | `app`(앱 일정) · `icloud`(가져온 일정). 나중에 `google` · `kakao`가 붙을 수 있다 |
+  | `id` | number | 일정 id(수정 · 삭제에 씀) |
+  | `calendarLinkId` | number \| null | 가져온 일정이면 그 연결 id |
+  | `startAt` · `endAt` | string | UTC ISO 8601(`Z`). 하루 종일이면 서울 자정 ~ 다음 자정 |
+  | `isAllDay` | boolean | 하루 종일 여부 |
+  | `startDate` · `endDate` | string \| null | 하루 종일이면 서울 날짜(`endDate`는 미포함), 아니면 null. 달력에는 이 값을 쓴다 |
+
+- 실패: 400 (첫 번째 하나만, `field` 포함)
+
+  | `error` | `field` | 언제 |
+  | --- | --- | --- |
+  | `missing_title` · `invalid_title` · `title_too_long` | `title` | 없음 · 공백만 / 글자가 아님 / 255자 초과 |
+  | `invalid_is_all_day` | `isAllDay` | `true` · `false`가 아님 |
+  | `missing_start_at` · `invalid_start_at` | `startAt` | 없음 / 형식이 틀림(시간대 없음 · 없는 날짜 · 하루 종일인데 시각) |
+  | `missing_end_at` · `invalid_end_at` | `endAt` | 위와 같음 |
+  | `invalid_range` | `endAt` | 끝이 시작보다 뒤가 아님 |
+
+### PATCH /api/calendar/schedules/:id
+
+내 앱 일정 수정. 보낸 칸만 바꾼다.
+
+- 로그인 필요
+- 요청 본문: `title` · `startAt` · `endAt` · `isAllDay` 중 하나 이상(형식은 만들기와 같음). 보낸 시각은 지금 일정의 형식(하루 종일 여부)으로 읽는다. **`isAllDay`를 보내면 `startAt` · `endAt`도 둘 다 새 형식으로 보낸다**(형식이 바뀌므로, 없으면 `missing_start_at` · `missing_end_at`)
+- 검사는 **보낸 칸과 지금 값을 합친 결과**로 한다: `startAt`만 바꿔 지금 `endAt`보다 늦어지거나, `endAt`만 바꿔 지금 `startAt`보다 빨라지면 400 `invalid_range`
+- 성공 **200**: 바뀐 일정 항목(만들기 응답과 같은 모양)
+- 실패
+  - 400: 만들기와 같은 코드 + `empty_update`(바꿀 칸 없음). 바꾼 결과가 시작 >= 끝이면 `invalid_range`, 일정은 그대로
+  - **403** `schedule_read_only`: iCloud 등 가져온 일정
+  - **404** `schedule_not_found`: 없는 일정 · **다른 사람의 일정** · 지운 일정 · 숫자가 아닌 id
+
+### DELETE /api/calendar/schedules/:id
+
+내 앱 일정 삭제.
+
+- 로그인 필요
+- 성공 **204** (본문 없음)
+- 실패: **403** `schedule_read_only`(가져온 일정), **404** `schedule_not_found`(없음 · 다른 사람 · 이미 지움)
+
 ### GET /api/notifications
 
 동기화 때 감지한 **내** Canvas 변경 알림(앱 안 알림함). 푸시 · 메일은 보내지 않는다. 동기화된 자료를 읽기만 한다.
@@ -602,7 +680,7 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 
 | `error` | 상태 | 어디서 | 의미 | 프론트에서 할 일 |
 | --- | --- | --- | --- | --- |
-| `not_authenticated` | 401 | `GET /me`, `/api/lms/*` · `/api/calendar/*` · `/api/notifications/*` | 로그인 안 됨 · 세션 만료 · 계정 삭제 | 로그인 화면으로 |
+| `not_authenticated` | 401 | `GET /me`, `/api/lms/*` · `/api/calendar/*`(일정 포함) · `/api/notifications/*` | 로그인 안 됨 · 세션 만료 · 계정 삭제 | 로그인 화면으로 |
 | `already_logged_out` | 401 | `POST /logout` | 이미 로그아웃 상태 | 로그아웃 성공처럼 처리(로그인 화면으로) |
 | `missing_email` | 400 | 이메일 가입 · 로그인 | 이메일 없음 | `field: email` 입력칸에 `message` 표시 |
 | `invalid_email` | 400 | 이메일 가입 · 로그인 | 이메일 형식 틀림 | 위와 같음 |
@@ -623,8 +701,14 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 | `lms_not_connected` | 404 | Canvas 연동 해제 · 수동 동기화 | 연결된 토큰 없음 | 토큰 입력 화면으로 |
 | `missing_from` · `missing_to` | 400 | 캘린더 | 기간 쿼리 없음 | 프론트 버그. 두 쿼리를 모두 보낸다 |
 | `invalid_from` · `invalid_to` | 400 | 캘린더 | 형식 틀림 · 시간대 없음 · 없는 날짜 | 프론트 버그. `toISOString()` 또는 `+09:00`을 붙여 보낸다 |
-| `invalid_range` | 400 | 캘린더 | `to`가 `from` 이후가 아님 | 프론트 버그 |
+| `invalid_range` | 400 | 캘린더 · 앱 일정 | 캘린더: `to`가 `from` 이후가 아님 / 앱 일정: 끝이 시작 이후가 아님 | 캘린더는 프론트 버그, 앱 일정은 `field: endAt` 입력칸에 표시 |
 | `range_too_long` | 400 | 캘린더 | 92일 초과 | 달력 보기 단위(월 · 주)로 나눠 부른다 |
+| `missing_title` · `invalid_title` · `title_too_long` | 400 | 앱 일정 만들기 · 수정 | 제목 없음 · 글자 아님 · 255자 초과 | `field: title` 입력칸에 `message` 표시 |
+| `missing_start_at` · `invalid_start_at` · `missing_end_at` · `invalid_end_at` | 400 | 앱 일정 만들기 · 수정 | 시각 없음 · 형식 틀림 | 입력칸에 표시. 시각은 `+09:00` · `Z`, 하루 종일은 날짜만 |
+| `invalid_is_all_day` | 400 | 앱 일정 만들기 · 수정 | `isAllDay`가 불리언이 아님 | 프론트 버그 |
+| `empty_update` | 400 | 앱 일정 수정 | 바꿀 칸 없음 | 프론트 버그 |
+| `schedule_read_only` | 403 | 앱 일정 수정 · 삭제 | 가져온 캘린더의 일정 | 수정 · 삭제 버튼을 숨긴다(`source !== 'app'`) |
+| `schedule_not_found` | 404 | 앱 일정 수정 · 삭제 | 없음 · 다른 사람 · 지움 | 목록을 새로 불러온다 |
 | `invalid_cursor` | 400 | 알림 목록 | 커서가 받은 값이 아님 | 프론트 버그. `nextCursor`를 그대로 보낸다(없으면 첫 페이지부터) |
 | `invalid_limit` | 400 | 알림 목록 | `limit`이 1 ~ 50 정수가 아님 | 프론트 버그 |
 | `invalid_unread` | 400 | 알림 목록 | `unread`가 `true` · `false`가 아님 | 프론트 버그 |

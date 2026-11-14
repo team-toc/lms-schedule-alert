@@ -10,6 +10,8 @@ import { createTokenService } from './token-service.js'
 import { createManualSync } from './manual-sync.js'
 import { createCalendarRepository } from '../calendar/calendar-repository.js'
 import { createNotificationRepository } from '../notifications/notification-repository.js'
+import { createScheduleRepository } from '../calendar/schedule-repository.js'
+import { createScheduleService } from '../calendar/schedule-service.js'
 
 export function createLmsServices({ pool, logger, lmsConfig, fetchFn = globalThis.fetch, now = () => new Date() }) {
   const canvasClient = createCanvasClient({ baseUrl: lmsConfig.canvasBaseUrl, fetchFn })
@@ -33,5 +35,6 @@ export function createLmsServices({ pool, logger, lmsConfig, fetchFn = globalThi
     manualSync,
     calendarRepository: createCalendarRepository(pool),
     notificationRepository: createNotificationRepository(pool, { now }),
+    scheduleService: createScheduleService({ repository: createScheduleRepository(pool), now }),
   }
 }
