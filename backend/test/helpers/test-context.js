@@ -66,7 +66,8 @@ export async function openTestContext() {
   // express-session은 미들웨어마다 저장소에 리스너를 붙이므로, 앱마다 저장소를 따로 만들고 끝에 모두 닫는다.
   // Canvas 서비스는 DB를 비우거나 닫기 전에 백그라운드 동기화가 끝나기를 기다린다(테스트 사이 누수 방지, 한 곳에서 처리).
   const shared = { sessionStores: [], lmsInstances: [] }
-  const waitForBackgroundSyncs = () => Promise.all(shared.lmsInstances.map((lms) => lms.syncRunner.whenIdle()))
+  const waitForBackgroundSyncs = () =>
+    Promise.all(shared.lmsInstances.flatMap((lms) => [lms.syncRunner.whenIdle(), lms.calendarSyncRunner?.whenIdle()]))
 
   return {
     ...db,

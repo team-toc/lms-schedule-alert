@@ -29,13 +29,20 @@ const passwordHasher = createPasswordHasher()
 const dummyPasswordHash = await createDummyPasswordHash(passwordHasher)
 const lmsServices = createLmsServices({ pool, logger, lmsConfig })
 const app = createApp({ config, logger, pool, kakaoClient, googleClient, sessionStore, passwordHasher, dummyPasswordHash, lmsServices })
+// Canvas · iCloud 두 실행기를 함께 시작 · 정지 · 대기 (shutdown.js는 실행기 하나처럼 다룬다)
+const runners = [lmsServices.syncRunner, lmsServices.calendarSyncRunner]
+const allRunners = {
+  start: () => runners.forEach((runner) => runner.start()),
+  stop: () => runners.forEach((runner) => runner.stop()),
+  whenIdle: () => Promise.all(runners.map((runner) => runner.whenIdle())),
+}
 
 const server = app.listen(config.port, () => {
   logger.info({ port: config.port, trustProxy: config.trustProxy }, 'backend started')
-  // 첫 주기 동기화는 시작 직후가 아니라 한 주기 뒤 (배포 · 재시작마다 Canvas에 몰아서 요청하지 않게)
-  lmsServices.syncRunner.start()
+  // 첫 주기 동기화는 시작 직후가 아니라 한 주기 뒤 (배포 · 재시작마다 Canvas · iCloud에 몰아서 요청하지 않게)
+  allRunners.start()
 })
 
-const shutdown = createShutdown({ server, syncRunner: lmsServices.syncRunner, pool, logger })
+const shutdown = createShutdown({ server, syncRunner: allRunners, pool, logger })
 process.on('SIGTERM', () => shutdown('SIGTERM'))
 process.on('SIGINT', () => shutdown('SIGINT'))
