@@ -11,6 +11,7 @@ import { createRequireUser } from './http/require-user.js'
 import { createLmsRouter } from './lms/lms-routes.js'
 import { createCalendarRouter } from './calendar/calendar-routes.js'
 import { createNotificationRouter } from './notifications/notification-routes.js'
+import { createScheduleRouter } from './calendar/schedule-routes.js'
 
 const HTTP_NOT_FOUND = 404
 const HTTP_INTERNAL_ERROR = 500
@@ -67,6 +68,7 @@ export function createApp(deps) {
   app.use(['/api/lms', '/api/calendar', '/api/notifications'], createRequireUser({ accountService }))
   app.use('/api/lms', createLmsRouter(lmsServices))
   app.use('/api/calendar', createCalendarRouter(lmsServices))
+  app.use('/api/calendar', createScheduleRouter(lmsServices))
   app.use('/api', createNotificationRouter(lmsServices))
   app.use('/api', respondNotFound)
 
