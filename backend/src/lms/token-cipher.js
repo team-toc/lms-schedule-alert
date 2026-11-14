@@ -1,5 +1,6 @@
-// Canvas 토큰 암호화 · 복호화 경계 레이어 (AES-256-GCM, ADR 0008).
-// 저장 형식: 'v1:' + base64(IV 12바이트 ‖ 인증 태그 16바이트 ‖ 암호문). AAD에 user_id를 넣어 다른 사용자 행으로 옮긴 암호문은 풀리지 않는다.
+// 비밀 문자열 암호화 · 복호화 경계 레이어 (AES-256-GCM, ADR 0008 · 0010). Canvas 토큰과 iCloud 공개 링크에 쓴다.
+// 저장 형식: 'v1:' + base64(IV 12바이트 ‖ 인증 태그 16바이트 ‖ 암호문). AAD에 용도와 user_id를 넣어
+// 다른 사용자 행으로 옮기거나 다른 용도(토큰 ↔ 링크)로 바꿔 끼운 암호문은 풀리지 않는다.
 // 토큰 · 암호문은 에러 메시지에 넣지 않는다.
 import { createCipheriv, createDecipheriv, randomBytes as cryptoRandomBytes } from 'node:crypto'
 
@@ -19,8 +20,14 @@ export class TokenDecryptError extends Error {
   }
 }
 
-function additionalData(userId) {
-  return Buffer.from(`lms_tokens.user_id:${userId}`, 'utf8')
+// 용도별 AAD. Canvas 토큰은 refactor 전과 바이트 단위로 같아야 한다(이미 저장된 암호문이 그대로 풀리게)
+export const CIPHER_CONTEXTS = Object.freeze({
+  lmsToken: (userId) => `lms_tokens.user_id:${userId}`,
+  icloudLink: (userId) => `calendar_link:icloud:${userId}`,
+})
+
+function additionalData(context, userId) {
+  return Buffer.from(context(userId), 'utf8')
 }
 
 function unpack(tokenEnc) {
@@ -42,7 +49,8 @@ function unpack(tokenEnc) {
   }
 }
 
-export function createTokenCipher({ key, randomBytes = cryptoRandomBytes } = {}) {
+// context: CIPHER_CONTEXTS 중 하나(기본 Canvas 토큰)
+export function createTokenCipher({ key, context = CIPHER_CONTEXTS.lmsToken, randomBytes = cryptoRandomBytes } = {}) {
   if (!Buffer.isBuffer(key) || key.length !== KEY_BYTES) {
     throw new TypeError('토큰 암호화 키는 32바이트 Buffer여야 함')
   }
@@ -50,7 +58,7 @@ export function createTokenCipher({ key, randomBytes = cryptoRandomBytes } = {})
   function encrypt(token, { userId }) {
     const iv = randomBytes(IV_BYTES)
     const cipher = createCipheriv(ALGORITHM, key, iv, { authTagLength: TAG_BYTES })
-    cipher.setAAD(additionalData(userId))
+    cipher.setAAD(additionalData(context, userId))
     const ciphertext = Buffer.concat([cipher.update(token, 'utf8'), cipher.final()])
     return VERSION_PREFIX + Buffer.concat([iv, cipher.getAuthTag(), ciphertext]).toString('base64')
   }
@@ -59,7 +67,7 @@ export function createTokenCipher({ key, randomBytes = cryptoRandomBytes } = {})
   function decrypt(tokenEnc, { userId }) {
     const { iv, tag, ciphertext } = unpack(tokenEnc)
     const decipher = createDecipheriv(ALGORITHM, key, iv, { authTagLength: TAG_BYTES })
-    decipher.setAAD(additionalData(userId))
+    decipher.setAAD(additionalData(context, userId))
     decipher.setAuthTag(tag)
     try {
       return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8')
