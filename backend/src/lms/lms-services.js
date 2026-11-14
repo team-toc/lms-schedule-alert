@@ -12,8 +12,14 @@ import { createCalendarRepository } from '../calendar/calendar-repository.js'
 import { createNotificationRepository } from '../notifications/notification-repository.js'
 import { createScheduleRepository } from '../calendar/schedule-repository.js'
 import { createScheduleService } from '../calendar/schedule-service.js'
+import { createCalendarServices } from '../calendar/calendar-services.js'
+import { createLimiter } from '../sync/limiter.js'
 
-export function createLmsServices({ pool, logger, lmsConfig, fetchFn = globalThis.fetch, now = () => new Date() }) {
+const DEFAULT_SYNC_CONCURRENCY = 2
+
+// icloudFetchFn: iCloud 공개 캘린더 요청용 fetch(테스트는 가짜). 동시 실행 상한은 Canvas · iCloud 실행기가 제한기 하나를 함께 쓴다(ADR 0010)
+export function createLmsServices({ pool, logger, lmsConfig, fetchFn = globalThis.fetch, icloudFetchFn = globalThis.fetch, now = () => new Date() }) {
+  const limit = createLimiter(lmsConfig.syncConcurrency ?? DEFAULT_SYNC_CONCURRENCY)
   const canvasClient = createCanvasClient({ baseUrl: lmsConfig.canvasBaseUrl, fetchFn })
   const tokenCipher = createTokenCipher({ key: lmsConfig.tokenKey })
   const tokenRepository = createLmsTokenRepository(pool, { logger })
@@ -23,7 +29,7 @@ export function createLmsServices({ pool, logger, lmsConfig, fetchFn = globalThi
     lmsSync,
     listTargets: tokenRepository.listSyncTargets,
     intervalMs: lmsConfig.syncIntervalMs,
-    concurrency: lmsConfig.syncConcurrency,
+    limit,
     logger,
   })
   const tokenService = createTokenService({ canvasClient, tokenCipher, tokenRepository, syncRunner, now, logger })
@@ -36,5 +42,6 @@ export function createLmsServices({ pool, logger, lmsConfig, fetchFn = globalThi
     calendarRepository: createCalendarRepository(pool),
     notificationRepository: createNotificationRepository(pool, { now }),
     scheduleService: createScheduleService({ repository: createScheduleRepository(pool), now }),
+    ...createCalendarServices({ pool, logger, lmsConfig, icloudFetchFn, now, limit }),
   }
 }

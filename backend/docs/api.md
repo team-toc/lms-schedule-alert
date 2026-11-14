@@ -134,6 +134,10 @@ export default defineConfig({
 | POST | `/api/calendar/schedules` | 예 | 앱 일정 만들기 |
 | PATCH | `/api/calendar/schedules/:id` | 예 | 앱 일정 수정 |
 | DELETE | `/api/calendar/schedules/:id` | 예 | 앱 일정 삭제 |
+| POST | `/api/calendar/links/icloud` | 예 | iCloud 공개 캘린더 링크 등록 + 첫 동기화 시작 |
+| GET | `/api/calendar/links` | 예 | 내 외부 캘린더 연결 목록 · 상태 |
+| DELETE | `/api/calendar/links/:id` | 예 | 연결 삭제(그 연결의 일정도) |
+| POST | `/api/calendar/links/:id/sync` | 예 | 지금 동기화(연결별 5분에 한 번) |
 | GET | `/api/notifications` | 예 | 내 알림(Canvas 변경) 목록, 최신순 |
 | POST | `/api/notifications/read-all` | 예 | 내 알림 전부 읽음 |
 | POST | `/api/notifications/:id/read` | 예 | 알림 하나 읽음 |
@@ -528,6 +532,70 @@ Canvas 연동 · 동기화 상태. 토큰 등록 직후에는 이걸 몇 초 간
 - 성공 **204** (본문 없음)
 - 실패: **403** `schedule_read_only`(가져온 일정), **404** `schedule_not_found`(없음 · 다른 사람 · 이미 지움)
 
+### POST /api/calendar/links/icloud
+
+iPhone · Mac 캘린더의 **공개 캘린더 링크**를 등록해 그 캘린더의 일정을 가져온다(읽기 전용). 캘린더마다 링크가 따로라 여러 개 등록할 수 있다(최대 5개).
+
+- 로그인 필요
+- 요청 본문: `{ "url": "webcal://p52-caldav.icloud.com/published/2/…" }`
+  - `webcal://` · `https://` 모두 받는다(서버가 https로 바꿔 요청). **http는 거부**
+  - **iCloud 링크만**: 호스트가 `icloud.com`이거나 `….icloud.com`. 계정 정보(`user@`) · 다른 포트 · IP 주소는 거부
+  - 최대 1024자. 쿼리(`?…`) · 조각(`#…`)은 버린다
+- 순서: 형식 검사 → 이미 등록했는지 · 개수 확인 → **실제로 받아 캘린더로 읽히는지 확인** → 저장 → 첫 동기화(백그라운드). 실패하면 아무것도 저장하지 않는다
+- 성공 **202**: `{ "id": 3, "provider": "icloud", "syncStatus": "syncing" }`. 일정은 첫 동기화가 끝나면 `GET /api/calendar/events`에 나온다(`GET /api/calendar/links`의 `syncStatus`가 `ok`가 되면 끝)
+- **링크는 비밀번호와 같다**(가진 사람은 누구나 일정을 볼 수 있음). 서버는 암호화해 저장하고 응답 · 목록 어디에도 돌려주지 않는다. 화면에도 다시 보여 주지 말 것
+- 실패 (`field: url`)
+
+  | 상태 | `error` | 언제 |
+  | --- | --- | --- |
+  | 400 | `missing_url` · `url_too_long` · `invalid_url` | 없음 · 1024자 초과 · URL 형식이 아님 |
+  | 400 | `insecure_url` | http 링크 |
+  | 400 | `host_not_allowed` | iCloud가 아닌 주소 · 계정 정보 · 다른 포트 · IP |
+  | 400 | `icloud_link_invalid` | iCloud가 링크를 찾지 못함(공개 해제 · 잘못 복사) |
+  | 400 | `icloud_not_calendar` · `icloud_parse_failed` | 캘린더가 아니거나 읽을 수 없음 |
+  | 400 | `icloud_redirect_rejected` · `icloud_too_many_redirects` | iCloud 밖으로 이동 · 이동이 너무 많음 |
+  | 400 | `icloud_too_large` · `icloud_too_many_events` | 5MB 초과 · 가까운 기간(지난 30일 ~ 앞으로 180일) 일정이 5000개 초과 |
+  | 409 | `calendar_link_already_registered` | 이미 등록한 링크(webcal · https · 대소문자 차이는 같은 링크) |
+  | 409 | `calendar_link_limit_reached` | 이미 5개 |
+  | 502 · 503 · 504 | `icloud_unavailable` · `icloud_rate_limited` · `icloud_timeout` | iCloud 연결 실패 · 요청 한도 · 응답 지연("잠시 후 다시") |
+
+### GET /api/calendar/links
+
+내 외부 캘린더 연결 목록.
+
+- 로그인 필요
+- 성공 **200**
+
+  ```json
+  {
+    "links": [
+      { "id": 3, "provider": "icloud", "syncStatus": "ok", "lastSyncedAt": "2026-11-14T03:00:00.000Z", "lastErrorCode": null, "createdAt": "2026-11-14T02:59:58.000Z" }
+    ]
+  }
+  ```
+
+  | 필드 | 설명 |
+  | --- | --- |
+  | `syncStatus` | `syncing`(첫 동기화 전) · `ok` · `failing`(다음 주기에 다시 시도) · `invalid`(링크를 더 쓸 수 없음 → 지우고 새 링크로 다시 등록하라고 안내) |
+  | `lastErrorCode` | 마지막 실패 코드(위 등록 실패 표의 `icloud_*`, 또는 `internal_error`), 성공하면 null |
+
+  - **링크(URL) 칸은 없다.** 화면에서 연결을 구분하려면 `id` · `createdAt`을 쓴다
+
+### DELETE /api/calendar/links/:id
+
+연결을 지운다. 그 연결에서 가져온 일정도 함께 지워진다(iCloud 캘린더 자체는 그대로).
+
+- 로그인 필요
+- 성공 **204**. 실패 **404** `calendar_link_not_found`(없음 · 다른 사람의 연결)
+
+### POST /api/calendar/links/:id/sync
+
+지금 동기화. 실제로는 내 연결 전체를 동기화한다(백그라운드).
+
+- 로그인 필요
+- 성공 **202** `{ "syncStatus": "ok" }`(요청 시점 상태). 끝났는지는 `GET /api/calendar/links`로
+- 실패: **404** `calendar_link_not_found`, **409** `calendar_link_invalid`(`invalid` 상태), **429** `sync_too_frequent` + `Retry-After`(초) — 연결별 5분에 한 번
+
 ### GET /api/notifications
 
 동기화 때 감지한 **내** Canvas 변경 알림(앱 안 알림함). 푸시 · 메일은 보내지 않는다. 동기화된 자료를 읽기만 한다.
@@ -707,6 +775,12 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 | `missing_start_at` · `invalid_start_at` · `missing_end_at` · `invalid_end_at` | 400 | 앱 일정 만들기 · 수정 | 시각 없음 · 형식 틀림 | 입력칸에 표시. 시각은 `+09:00` · `Z`, 하루 종일은 날짜만 |
 | `invalid_is_all_day` | 400 | 앱 일정 만들기 · 수정 | `isAllDay`가 불리언이 아님 | 프론트 버그 |
 | `empty_update` | 400 | 앱 일정 수정 | 바꿀 칸 없음 | 프론트 버그 |
+| `missing_url` · `url_too_long` · `invalid_url` · `insecure_url` · `host_not_allowed` | 400 | iCloud 연결 등록 | 링크 형식 · 주소 문제 | `field: url` 입력칸에 `message` 표시 |
+| `icloud_link_invalid` · `icloud_not_calendar` · `icloud_parse_failed` · `icloud_redirect_rejected` · `icloud_too_many_redirects` · `icloud_too_large` · `icloud_too_many_events` | 400 | iCloud 연결 등록 | 받아 보니 쓸 수 없는 링크 | 입력칸에 `message` 표시 |
+| `icloud_unavailable` · `icloud_rate_limited` · `icloud_timeout` | 502 · 503 · 504 | iCloud 연결 등록 | iCloud 쪽 문제 | "잠시 후 다시 시도" |
+| `calendar_link_already_registered` · `calendar_link_limit_reached` | 409 | iCloud 연결 등록 | 이미 등록 · 5개 초과 | `message` 표시 |
+| `calendar_link_not_found` | 404 | 연결 삭제 · 수동 동기화 | 없음 · 다른 사람 | 목록을 새로 불러온다 |
+| `calendar_link_invalid` | 409 | 수동 동기화 | 링크를 더 쓸 수 없음 | 연결을 지우고 다시 등록하라고 안내 |
 | `schedule_read_only` | 403 | 앱 일정 수정 · 삭제 | 가져온 캘린더의 일정 | 수정 · 삭제 버튼을 숨긴다(`source !== 'app'`) |
 | `schedule_not_found` | 404 | 앱 일정 수정 · 삭제 | 없음 · 다른 사람 · 지움 | 목록을 새로 불러온다 |
 | `invalid_cursor` | 400 | 알림 목록 | 커서가 받은 값이 아님 | 프론트 버그. `nextCursor`를 그대로 보낸다(없으면 첫 페이지부터) |
@@ -714,7 +788,7 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 | `invalid_unread` | 400 | 알림 목록 | `unread`가 `true` · `false`가 아님 | 프론트 버그 |
 | `notification_not_found` | 404 | 알림 읽음 | 없는 알림 · 다른 사람의 알림 | 목록을 새로 불러온다 |
 | `lms_needs_reauth` | 409 | 수동 동기화 | 토큰 만료 · 취소 | 토큰을 다시 등록하라고 안내 |
-| `sync_too_frequent` | 429 | 수동 동기화 | 5분 안에 다시 요청 | `Retry-After`(초)만큼 동기화 버튼 비활성화 |
+| `sync_too_frequent` | 429 | Canvas · 캘린더 수동 동기화 | 5분 안에 다시 요청 | `Retry-After`(초)만큼 동기화 버튼 비활성화 |
 | `canvas_rate_limited` | 503 | Canvas 토큰 등록 | Canvas 요청 한도 초과 | 위와 같음 |
 | `canvas_timeout` | 504 | Canvas 토큰 등록 | Canvas 응답 지연 | 위와 같음 |
 | `unsupported_charset` | 415 | JSON 본문을 받는 API | 문자셋이 UTF-8이 아님 | 프론트 버그. `charset`을 빼거나 `utf-8`로 |
