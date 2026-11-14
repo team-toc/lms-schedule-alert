@@ -1,6 +1,6 @@
 # ERD (백엔드 DB)
 
-현재 마이그레이션(`migrations/0001` ~ `0018`) 기준으로 **실제로 있는 테이블만** 그린다. 마이그레이션을 추가하면 같은 커밋에서 이 문서도 고친다. 아직 만들지 않은 일정(`schedules`) · 알림 테이블은 넣지 않는다.
+현재 마이그레이션(`migrations/0001` ~ `0020`) 기준으로 **실제로 있는 테이블만** 그린다. 마이그레이션을 추가하면 같은 커밋에서 이 문서도 고친다.
 
 - 문자셋 utf8mb4, 시간 칼럼은 UTC로 저장 (`DATETIME(3)`, 밀리초까지)
 - 마이그레이션 실행 기록 `schema_migrations`는 도구의 장부라 그리지 않는다
@@ -21,6 +21,9 @@ erDiagram
     users ||--o{ notifications : "앱 내 알림 (ON DELETE CASCADE)"
     assignments ||--o{ notifications : "과제 알림 대상"
     announcements ||--o{ notifications : "공지 알림 대상"
+    users ||--o{ calendar_links : "외부 캘린더 연결, 최대 5개 (ON DELETE CASCADE)"
+    users ||--o{ schedules : "일정 (ON DELETE CASCADE)"
+    calendar_links ||--o{ schedules : "가져온 일정 (ON DELETE CASCADE)"
 
     users {
         bigint_unsigned id PK "AUTO_INCREMENT"
@@ -130,6 +133,36 @@ erDiagram
         datetime(3) read_at "NULL, 읽은 시각 (NULL = 안 읽음)"
     }
 
+    calendar_links {
+        bigint_unsigned id PK "AUTO_INCREMENT"
+        bigint_unsigned user_id FK "NOT NULL → users.id"
+        enum provider "NOT NULL, 'icloud' | 'google' | 'kakao' (이번에는 icloud만, 값은 맨 뒤에만 추가)"
+        varchar(2048) url_enc "NOT NULL, ascii, 링크 암호문 'v1:' + base64 (AES-256-GCM, 원문 저장 안 함)"
+        char(64) url_hash "NOT NULL, ascii, 정규화 URL의 HMAC-SHA256 hex (중복 등록 방지)"
+        enum sync_status "NOT NULL, 'syncing' | 'ok' | 'failing' | 'invalid', 기본 'syncing'"
+        datetime(3) last_synced_at "NULL, 마지막으로 동기화를 반영한 시각"
+        varchar(64) last_error_code "NULL, 마지막 실패의 고정 코드"
+        datetime(3) created_at "NOT NULL, 기본 현재 시각"
+        datetime(3) updated_at "NOT NULL, 행이 바뀌면 자동 갱신"
+    }
+
+    schedules {
+        bigint_unsigned id PK "AUTO_INCREMENT"
+        bigint_unsigned user_id FK "NOT NULL → users.id"
+        bigint_unsigned calendar_link_id FK "NULL → calendar_links.id (앱 일정은 NULL)"
+        enum source "NOT NULL, 'app' | 'icloud' | 'google' | 'kakao'"
+        char(64) external_id "NULL, ascii, sha256(제공자 id + 회차 키) hex (앱 일정은 NULL)"
+        varchar(255) title "NOT NULL, 제목만 (설명 · 위치 저장 안 함)"
+        datetime(3) start_at "NOT NULL, UTC"
+        datetime(3) end_at "NOT NULL, UTC, start_at 이상 (CHECK, 길이 0 허용)"
+        boolean is_all_day "NOT NULL, 기본 FALSE, 하루 종일은 서울 자정 ~ 다음 자정"
+        enum status "NOT NULL, 'confirmed' | 'tentative' | 'cancelled', 기본 'confirmed'"
+        char(64) content_hash "NULL, 외부 일정 내용 해시 (변화 없으면 행 그대로)"
+        datetime(3) deleted_at "NULL, 원본에서 사라짐 · 앱에서 삭제"
+        datetime(3) created_at "NOT NULL, 기본 현재 시각"
+        datetime(3) updated_at "NOT NULL, 행이 바뀌면 자동 갱신"
+    }
+
     sessions {
         varchar(128) session_id PK "utf8mb4_bin"
         int_unsigned expires "NOT NULL, 만료 시각(유닉스 초), 인덱스"
@@ -184,6 +217,19 @@ erDiagram
 | notifications | `chk_notifications_one_target` | CHECK | `assignment_id`와 `announcement_id` 중 정확히 하나만 값 |
 | notifications | `fk_notifications_user` | FK | `user_id` → `users.id`, ON DELETE CASCADE |
 | notifications | `fk_notifications_assignment` · `fk_notifications_announcement` | FK | → `assignments.id` · `announcements.id` (CASCADE 아님) |
+| calendar_links | PRIMARY | PK | `id` |
+| calendar_links | `uq_calendar_links_user_url` | UNIQUE (복합) | `user_id`, `url_hash` (같은 링크 중복 등록 방지, 사용자 목록 조회도 이 인덱스) |
+| calendar_links | `idx_calendar_links_sync_targets` | 인덱스 (복합) | `sync_status`, `last_synced_at` (주기 실행 대상 · 오래된 것부터) |
+| calendar_links | `chk_calendar_links_url_hash` | CHECK | `url_hash`는 소문자 hex 64자 |
+| calendar_links | `fk_calendar_links_user` | FK | `user_id` → `users.id`, ON DELETE CASCADE |
+| schedules | PRIMARY | PK | `id` |
+| schedules | `uq_schedules_link_external` | UNIQUE (복합) | `calendar_link_id`, `external_id` (한 연결 안에서 회차 하나에 한 행, 앱 일정은 NULL이라 제한 없음) |
+| schedules | `idx_schedules_user_start` | 인덱스 (복합) | `user_id`, `start_at` (기간 조회 · 겹침: `start_at < :to`) |
+| schedules | `idx_schedules_user_end` | 인덱스 (복합) | `user_id`, `end_at` (기간 조회 · 겹침: `end_at > :from`) |
+| schedules | `chk_schedules_time` | CHECK | `start_at <= end_at` (길이 0 일정 허용) |
+| schedules | `chk_schedules_source_link` · `chk_schedules_source_external` | CHECK | 앱 일정 ⇔ 연결 · `external_id` 없음, 외부 일정은 둘 다 있음 |
+| schedules | `fk_schedules_user` | FK | `user_id` → `users.id`, ON DELETE CASCADE |
+| schedules | `fk_schedules_calendar_link` | FK | `calendar_link_id` → `calendar_links.id`, ON DELETE CASCADE |
 | sessions | PRIMARY | PK | `session_id` |
 | sessions | `idx_sessions_expires` | 인덱스 | `expires` (만료 세션 정리용) |
 
@@ -216,3 +262,15 @@ erDiagram
 - `lms_tokens.canvas_user_id` · `baseline_required`: 같은 Canvas 계정으로 재등록 · 교체하면 기준 동기화를 하지 않아 끊긴 동안의 변경도 알린다. 다른 계정 · 계정 id 없음 · 새 등록은 기준 동기화(알림 없음)이고, 다른 계정으로 교체하면 이전 알림도 같은 트랜잭션에서 지운다. 기존 행은 기본값 TRUE.
 - `canvas_user_id`는 **문자열**(`VARCHAR(20)`, `ascii_bin`): Canvas id는 64비트 정수라 2^53을 넘을 수 있는데, JS Number와 mysql2의 BIGINT 읽기(기본 Number)가 모두 정밀도를 잃는다. Canvas에는 `Accept: application/json+canvas-string-ids`로 문자열 id를 받고, 저장 · 비교 모두 문자열로 한다.
 - 되돌리기 보호: 0015 ~ 0018의 down은 값(알림 행 · 본 값 · 계정 id)이 있으면 실패하고 지우지 않는다.
+
+### 일정 · 외부 캘린더 (0019 ~ 0020, ADR 0010)
+
+- `schedules` 한 테이블에 **앱에서 만든 일정**(`source = 'app'`)과 **외부 캘린더에서 가져온 일정**(`icloud`, 나중에 `google` · `kakao`)을 둔다. 외부 제공자는 공통 모양(NormalizedEvent)으로 넘겨 같은 반영 코드를 쓴다.
+- 반복 일정은 동기화 때 기간(−30일 ~ +180일) 안의 **회차로 펼쳐** 한 행씩 저장한다. `external_id = sha256(UID | 회차 원래 시작 UTC)`라 한 회차만 바뀌어도(RECURRENCE-ID) 같은 행을 고친다.
+- 하루 종일 일정은 `Asia/Seoul` 자정 ~ 다음 자정의 UTC 범위로 저장하고 `is_all_day`로 표시한다(겹침 판단에서는 뺀다).
+- 시작 = 끝(길이 0) 일정은 저장 · 조회에 포함하고 겹침 판단에서는 뺀다. iCloud에 흔하고, CHECK가 막으면 하나 때문에 그 연결의 동기화 전체가 실패하기 때문. 끝이 시작보다 앞선 깨진 일정은 동기화 때 그 항목만 건너뛴다(건너뛴 개수만 로그). 앱 일정 API는 시작 < 끝만 받는다.
+- `calendar_links`는 사용자당 최대 5개(앱 상수). 같은 링크는 `url_hash`(정규화 URL의 HMAC-SHA256, 키는 `CANVAS_TOKEN_KEY`에서 HKDF로 파생)로 막는다. 키 없는 해시는 링크 후보를 해시해 맞춰 볼 수 있어 쓰지 않는다. URL 원문 · 일부는 어디에도 저장하지 않는다.
+- 원본에서 사라진 일정 · 앱에서 지운 일정은 `deleted_at`. 조회 · 겹침은 `deleted_at IS NULL` · `status <> 'cancelled'`만.
+- 연결을 지우면 그 연결의 일정도 함께 지워진다(FK CASCADE). 사용자를 지우면 연결 · 일정 모두 지워진다.
+- 되돌리기 보호: 0019 ~ 0020의 down은 행이 있으면 실패하고 지우지 않는다.
+
