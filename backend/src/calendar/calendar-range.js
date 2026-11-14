@@ -35,8 +35,9 @@ function isValidOffset(match) {
   return zone === 'Z' || (Number(offsetHours) <= MAX_OFFSET_HOURS && Number(offsetMinutes) <= MAX_OFFSET_MINUTES)
 }
 
+// 시간대가 붙은 ISO 8601 시각 하나. 앱 일정 입력 검사도 같은 규칙을 쓴다(ADR 0010).
 // 결과: Date | 'missing' | 'invalid'
-function parseInstant(value) {
+export function parseInstant(value) {
   if (value === undefined || value === '') {
     return 'missing'
   }
