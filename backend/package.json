@@ -24,6 +24,7 @@
     "express-mysql-session": "^3.0.3",
     "express-session": "^1.19.0",
     "mysql2": "^3.24.6",
+    "node-ical": "0.27.3",
     "pino": "^10.4.0",
     "pino-http": "^11.0.0",
     "umzug": "^3.8.3"
@@ -35,6 +36,10 @@
   "overrides": {
     "express-mysql-session": {
       "mysql2": "$mysql2"
-    }
+    },
+    "rrule-temporal": "2.2.8",
+    "temporal-polyfill": "1.0.6",
+    "temporal-spec": "1.0.1",
+    "temporal-utils": "1.0.3"
   }
 }
