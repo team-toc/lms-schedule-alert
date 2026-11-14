@@ -130,7 +130,8 @@ export default defineConfig({
 | DELETE | `/api/lms/token` | 예 | Canvas 연동 해제(토큰 · 내 연결 삭제) |
 | GET | `/api/lms/status` | 예 | Canvas 연동 · 동기화 상태 |
 | POST | `/api/lms/sync` | 예 | 지금 동기화(5분에 한 번) |
-| GET | `/api/calendar/events` | 예 | 기간 안의 내 과제 마감 |
+| GET | `/api/calendar/events` | 예 | 기간 안의 내 과제 마감 + 앱 일정 + 가져온(iCloud) 일정 |
+| GET | `/api/calendar/conflicts` | 예 | 기간 안의 겹치는 일정 쌍 |
 | POST | `/api/calendar/schedules` | 예 | 앱 일정 만들기 |
 | PATCH | `/api/calendar/schedules/:id` | 예 | 앱 일정 수정 |
 | DELETE | `/api/calendar/schedules/:id` | 예 | 앱 일정 삭제 |
@@ -398,7 +399,7 @@ Canvas 연동 · 동기화 상태. 토큰 등록 직후에는 이걸 몇 초 간
 
 ### GET /api/calendar/events
 
-기간 안에 마감이 있는 **내** Canvas 과제 목록. 과제 마감은 Canvas가 그 사용자에게 준 값이다(개인 · 분반 연장 반영). 동기화된 자료를 읽기만 한다(Canvas를 부르지 않음).
+기간 안의 **내** 일정 한 목록: Canvas 과제 마감(`source: assignment`) + 앱에서 만든 일정(`source: app`) + 가져온 캘린더 일정(`source: icloud`, 나중에 `google` · `kakao`). 과제 마감은 Canvas가 그 사용자에게 준 값이다(개인 · 분반 연장 반영). 동기화된 자료를 읽기만 한다(Canvas · iCloud를 부르지 않음).
 
 - 로그인 필요
 - 요청: 쿼리 `from` · `to` (둘 다 필수)
@@ -438,15 +439,27 @@ Canvas 연동 · 동기화 상태. 토큰 등록 직후에는 이걸 몇 초 간
   | 필드 | 타입 | 설명 |
   | --- | --- | --- |
   | `from` · `to` | string | UTC로 바꾼 조회 기간 (`Z`로 끝남) |
-  | `events[].source` | `"assignment"` | 지금은 과제 마감만. 나중에 다른 종류가 붙을 수 있으니 모르는 값은 건너뛴다 |
+  | `events[].source` | string | `assignment`(과제 마감) · `app`(앱 일정) · `icloud`(가져온 일정). 나중에 다른 종류가 붙을 수 있으니 모르는 값은 건너뛴다 |
   | `events[].id` | number | 우리 서버의 과제 id(Canvas id 아님). `source`와 함께 목록 key로 쓴다 |
   | `events[].courseName` | string | 과목 이름 (최대 255자) |
   | `events[].title` | string | 과제 제목 (최대 255자, 없으면 `(제목 없음)`) |
   | `events[].dueAt` | string | 마감 시각, UTC ISO 8601(`Z`). 화면에서 현지 시각으로 바꿔 보여 준다 |
   | `events[].url` | string \| null | Canvas 과제 페이지. 우리 학교 Canvas 주소의 https 링크만 오고, 아니면 null |
 
-  - 정렬: `dueAt` 오름차순, 같으면 `id` 오름차순(항상 같은 순서).
-  - 나오지 않는 것: 마감이 없는 과제, Canvas에서 사라진 과제, 다른 사람의 과제, Canvas 연동을 해제했거나 연결하지 않은 사용자(빈 목록, 200).
+  - 위 표는 **과제 항목**(`source: assignment`)의 필드다(기존과 같음). **일정 항목**(`app` · `icloud`)은 `POST /api/calendar/schedules` 응답과 같은 모양이다:
+
+    ```json
+    { "source": "icloud", "id": 41, "calendarLinkId": 3, "title": "동아리", "startAt": "2026-11-20T10:00:00.000Z", "endAt": "2026-11-20T11:00:00.000Z", "isAllDay": false, "startDate": null, "endDate": null }
+    ```
+
+    - `id`는 일정 id(과제 id와 다른 번호 체계). 목록 key는 `source` + `id`
+    - `app`만 수정 · 삭제할 수 있다. `icloud` 등은 읽기 전용(원래 캘린더에서 바꾼다)
+    - 시작 = 끝(길이 0)인 일정도 온다(iCloud의 "알림만" 일정 등). 하루 종일이면 `startDate` · `endDate`(끝 미포함)로 달력에 그린다
+    - 가져온 일정은 동기화 때 **지난 30일 ~ 앞으로 180일** 범위만 갖고 있다. 그 밖의 기간을 조회하면 가져온 일정은 비어 있다
+
+  - 정렬: 시각(과제는 `dueAt`, 일정은 `startAt`) 오름차순 → 같으면 `assignment` · `app` · `icloud` 순 → `id` 오름차순(항상 같은 순서). 과제만 있을 때는 이전과 같다(마감 → id).
+  - 기간: 과제는 `from <= dueAt < to`. 일정은 기간과 겹치면 나온다(`startAt < to` 이고 `endAt > from`, 길이 0 일정은 `from <= startAt < to`). 그래서 기간 앞에서 시작한 일정도 걸쳐 있으면 온다
+  - 나오지 않는 것: 마감이 없는 과제, Canvas에서 사라진 과제, 다른 사람의 과제 · 일정, Canvas 연동을 해제했거나 연결하지 않은 사용자의 과제, 지운 앱 일정, 원본에서 사라졌거나 취소된 가져온 일정, 지운 연결의 일정(없으면 빈 목록, 200).
 
 - 실패: 400 (첫 번째 하나만)
 
@@ -684,9 +697,47 @@ iPhone · Mac 캘린더의 **공개 캘린더 링크**를 등록해 그 캘린�
 - 성공 **204** (본문 없음). 이미 읽은 알림도 204(읽은 시각은 처음 값 그대로)
 - 실패: **404** `notification_not_found` — 없는 id, **다른 사람의 알림**, 숫자가 아닌 id 모두 같은 응답
 
+### GET /api/calendar/conflicts
+
+기간 안에서 **시간이 겹치는 내 일정 쌍**. 앱 일정 · 가져온 일정끼리(과제 마감은 포함하지 않음).
+
+- 로그인 필요
+- 요청: 쿼리 `from` · `to` — `GET /api/calendar/events`와 **같은 규칙**(시간대 필수, `[from, to)`, 최대 92일, 같은 오류 코드)
+- 성공 **200**
+
+  ```json
+  {
+    "from": "2026-11-01T00:00:00.000Z",
+    "to": "2026-12-01T00:00:00.000Z",
+    "conflicts": [
+      {
+        "kind": "schedule_overlap",
+        "a": { "source": "app", "id": 7, "title": "회의", "startAt": "2026-11-20T01:00:00.000Z", "endAt": "2026-11-20T02:00:00.000Z" },
+        "b": { "source": "icloud", "id": 41, "title": "동아리", "startAt": "2026-11-20T01:30:00.000Z", "endAt": "2026-11-20T02:30:00.000Z" },
+        "overlapStartAt": "2026-11-20T01:30:00.000Z",
+        "overlapEndAt": "2026-11-20T02:00:00.000Z"
+      }
+    ],
+    "truncated": false
+  }
+  ```
+
+  | 필드 | 설명 |
+  | --- | --- |
+  | `conflicts[].kind` | 지금은 `schedule_overlap`(일정끼리)만. 모르는 값은 건너뛴다 |
+  | `conflicts[].a` · `b` | 겹치는 두 일정. `a`가 먼저 시작한 쪽(같으면 id 작은 쪽). 같은 쌍은 한 번만(`(A, B)`와 `(B, A)`는 하나) |
+  | `conflicts[].overlapStartAt` · `overlapEndAt` | 겹친 구간(UTC) |
+  | `truncated` | 겹친 쌍이 **500개**를 넘어 앞에서부터 500개만 왔으면 true. 화면에 "더 있음"을 표시하고 기간을 줄여 다시 조회 |
+
+  - 겹침 = `A.start < B.end` 이고 `B.start < A.end`. **끝과 시작이 맞닿으면 겹침이 아니다**(10:00 ~ 11:00과 11:00 ~ 12:00)
+  - 빼는 것: **하루 종일 일정**(휴일 · 시험 기간처럼 그날 모든 일정과 겹쳐 쓸모없어서), **길이 0 일정**, 지운 · 취소된 일정, 다른 사람의 일정
+  - 반복 일정은 회차마다 따로 본다(겹치는 회차만 나온다)
+  - 정렬: `a.startAt` → `a.id` → `b.startAt` → `b.id` (항상 같은 순서)
+  - 알려진 한계: 같은 일정이 여러 iCloud 캘린더에 함께 들어 있으면 서로 겹침으로 나온다
+
 ### Canvas 자료를 화면에 보여 줄 때 (보안)
 
-- 과목 이름 · 과제 제목 · 알림의 제목(`title` · `before.title` · `after.title`) · (나중에 생길) 공지 본문은 **Canvas에서 온 그대로**다. 교수 · 조교 등 다른 사람이 쓴 글이므로 **`innerHTML`(React의 `dangerouslySetInnerHTML`, Vue의 `v-html`)로 넣지 말 것.** 글자로만 넣는다(`textContent`, React · Vue 기본 바인딩).
+- 과목 이름 · 과제 제목 · 알림의 제목(`title` · `before.title` · `after.title`) · 가져온 일정 제목 · (나중에 생길) 공지 본문은 **Canvas · iCloud에서 온 그대로**다. 교수 · 조교 등 다른 사람이 쓴 글이므로 **`innerHTML`(React의 `dangerouslySetInnerHTML`, Vue의 `v-html`)로 넣지 말 것.** 글자로만 넣는다(`textContent`, React · Vue 기본 바인딩).
 - 공지 본문은 서버에 **Canvas HTML 원본 그대로** 저장되어 있다(정제하지 않음). 공지 API가 생겨 HTML로 보여 줘야 할 때는 반드시 DOMPurify 같은 정제 도구를 거친 뒤에 넣는다.
 - `url`은 서버가 우리 학교 Canvas 주소의 https 링크인지 확인한 값이지만, 새 창으로 열 때는 `rel="noopener noreferrer"`를 붙인다.
 
@@ -767,10 +818,10 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 | `canvas_token_rejected` | 400 | Canvas 토큰 등록 | Canvas가 토큰을 거부 | 입력칸에 표시 + 새 토큰을 만들어 다시 넣으라고 안내 |
 | `canvas_unavailable` | 502 | Canvas 토큰 등록 | Canvas 연결 실패 · 오류 | "잠시 후 다시 시도" 표시 |
 | `lms_not_connected` | 404 | Canvas 연동 해제 · 수동 동기화 | 연결된 토큰 없음 | 토큰 입력 화면으로 |
-| `missing_from` · `missing_to` | 400 | 캘린더 | 기간 쿼리 없음 | 프론트 버그. 두 쿼리를 모두 보낸다 |
-| `invalid_from` · `invalid_to` | 400 | 캘린더 | 형식 틀림 · 시간대 없음 · 없는 날짜 | 프론트 버그. `toISOString()` 또는 `+09:00`을 붙여 보낸다 |
-| `invalid_range` | 400 | 캘린더 · 앱 일정 | 캘린더: `to`가 `from` 이후가 아님 / 앱 일정: 끝이 시작 이후가 아님 | 캘린더는 프론트 버그, 앱 일정은 `field: endAt` 입력칸에 표시 |
-| `range_too_long` | 400 | 캘린더 | 92일 초과 | 달력 보기 단위(월 · 주)로 나눠 부른다 |
+| `missing_from` · `missing_to` | 400 | 캘린더 · 겹침 | 기간 쿼리 없음 | 프론트 버그. 두 쿼리를 모두 보낸다 |
+| `invalid_from` · `invalid_to` | 400 | 캘린더 · 겹침 | 형식 틀림 · 시간대 없음 · 없는 날짜 | 프론트 버그. `toISOString()` 또는 `+09:00`을 붙여 보낸다 |
+| `invalid_range` | 400 | 캘린더 · 겹침 · 앱 일정 | 캘린더 · 겹침: `to`가 `from` 이후가 아님 / 앱 일정: 끝이 시작 이후가 아님 | 캘린더는 프론트 버그, 앱 일정은 `field: endAt` 입력칸에 표시 |
+| `range_too_long` | 400 | 캘린더 · 겹침 | 92일 초과 | 달력 보기 단위(월 · 주)로 나눠 부른다 |
 | `missing_title` · `invalid_title` · `title_too_long` | 400 | 앱 일정 만들기 · 수정 | 제목 없음 · 글자 아님 · 255자 초과 | `field: title` 입력칸에 `message` 표시 |
 | `missing_start_at` · `invalid_start_at` · `missing_end_at` · `invalid_end_at` | 400 | 앱 일정 만들기 · 수정 | 시각 없음 · 형식 틀림 | 입력칸에 표시. 시각은 `+09:00` · `Z`, 하루 종일은 날짜만 |
 | `invalid_is_all_day` | 400 | 앱 일정 만들기 · 수정 | `isAllDay`가 불리언이 아님 | 프론트 버그 |

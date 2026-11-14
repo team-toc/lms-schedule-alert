@@ -12,6 +12,7 @@ import { createCalendarRepository } from '../calendar/calendar-repository.js'
 import { createNotificationRepository } from '../notifications/notification-repository.js'
 import { createScheduleRepository } from '../calendar/schedule-repository.js'
 import { createScheduleService } from '../calendar/schedule-service.js'
+import { createScheduleQueries } from '../calendar/schedule-queries.js'
 import { createCalendarServices } from '../calendar/calendar-services.js'
 import { createLimiter } from '../sync/limiter.js'
 
@@ -40,6 +41,7 @@ export function createLmsServices({ pool, logger, lmsConfig, fetchFn = globalThi
     tokenService,
     manualSync,
     calendarRepository: createCalendarRepository(pool),
+    scheduleQueries: createScheduleQueries(pool),
     notificationRepository: createNotificationRepository(pool, { now }),
     scheduleService: createScheduleService({ repository: createScheduleRepository(pool), now }),
     ...createCalendarServices({ pool, logger, lmsConfig, icloudFetchFn, now, limit }),
