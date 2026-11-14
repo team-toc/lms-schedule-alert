@@ -3,41 +3,17 @@
 // - 요청 실행(requestSync): 토큰 등록 직후 첫 동기화 · 수동 동기화. 응답을 기다리게 하지 않는 백그라운드.
 // - 동시 실행 상한(concurrency): 위 둘을 합친 전체 동기화 수. DB 풀 크기와의 관계는 ADR 0008.
 // 백그라운드 동기화는 절대 거부(reject)되지 않는다: 예상 밖 에러는 로그로 남기고 failed로 바꾼다.
+import { createLimiter } from '../sync/limiter.js'
+
 const DEFAULT_CONCURRENCY = 2
 const DEFAULT_TIMERS = {
   setTimeout: (fn, ms) => setTimeout(fn, ms).unref(),
   clearTimeout: (timer) => clearTimeout(timer),
 }
 
-// 동시에 max개까지만 task를 실행하고 나머지는 들어온 순서대로 기다리게 한다
-function createLimiter(max) {
-  let active = 0
-  const queue = []
-  const next = () => {
-    if (active >= max || queue.length === 0) {
-      return
-    }
-    active += 1
-    const { task, resolve, reject } = queue.shift()
-    Promise.resolve()
-      .then(task)
-      .then(resolve, reject)
-      .finally(() => {
-        active -= 1
-        next()
-      })
-  }
-  return (task) =>
-    new Promise((resolve, reject) => {
-      queue.push({ task, resolve, reject })
-      next()
-    })
-}
-
 // 상한을 지키며 한 사용자를 동기화한다. 동기화 안의 에러는 lmsSync가 잡아 failing으로 기록하므로,
 // 여기까지 오는 것은 잠금 연결조차 못 얻은 경우 등(기록 불가)이다
-function createSafeSync({ lmsSync, logger, concurrency }) {
-  const limit = createLimiter(concurrency)
+function createSafeSync({ lmsSync, logger, limit }) {
   return (userId) =>
     limit(() => lmsSync.syncUser(userId)).catch((err) => {
       logger.error({ event: 'lms_sync_crashed', userId, err: { name: err?.name, code: err?.code } }, 'lms sync crashed')
@@ -81,8 +57,9 @@ async function syncWithRetry({ lmsSync, safeSync }, userId) {
   return safeSync(userId)
 }
 
-export function createSyncRunner({ lmsSync, listTargets, intervalMs, logger, timers = DEFAULT_TIMERS, concurrency = DEFAULT_CONCURRENCY }) {
-  const safeSync = createSafeSync({ lmsSync, logger, concurrency })
+// limit: 여러 실행기가 동시 실행 상한을 함께 지키도록 넘기는 제한기(src/sync/limiter.js). 없으면 concurrency로 이 실행기만의 제한기
+export function createSyncRunner({ lmsSync, listTargets, intervalMs, logger, timers = DEFAULT_TIMERS, concurrency = DEFAULT_CONCURRENCY, limit = createLimiter(concurrency) }) {
+  const safeSync = createSafeSync({ lmsSync, logger, limit })
   const inFlight = new Set()
   const state = { timer: null, running: null, stopped: false }
   const track = (promise) => {
