@@ -1,182 +1,244 @@
-
 #root {
   min-height: 100vh;
 }
 
 .app {
+  width: 100%;
+  max-width: 430px;
   min-height: 100vh;
+  margin: 0 auto;
+  background: #f3f4f7;
+  box-shadow: 0 12px 42px rgba(31, 41, 55, 0.07);
+  position: relative;
 }
 
+/* 상단 헤더 */
 .header {
-  padding: 28px 40px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 34px 22px 14px;
+  background: #f3f4f7;
 }
 
 .header h1 {
   margin: 0;
-  font-size: 28px;
-  color: #2563eb;
+  color: #171b24;
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -0.7px;
 }
 
 .header p {
-  margin: 8px 0 0;
-  color: #6b7280;
-  font-size: 14px;
+  margin: 6px 0 0;
+  color: #89909e;
+  font-size: 12px;
 }
 
+/* 하단 고정 메뉴: 현재 컴포넌트의 5개 메뉴를 모두 유지 */
 .navigation {
-  display: flex;
-  gap: 12px;
-  padding: 16px 40px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  position: fixed;
+  z-index: 20;
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 2px;
+  width: min(calc(100% - 32px), 392px);
+  padding: 7px;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid #e9ebf0;
+  border-radius: 24px;
+  box-shadow: 0 8px 28px rgba(32, 39, 53, 0.15);
 }
 
 .navigation button {
-  padding: 10px 18px;
-  border: none;
-  border-radius: 8px;
+  min-width: 0;
+  padding: 12px 2px;
+  border: 0;
+  border-radius: 17px;
   background: transparent;
-  color: #4b5563;
+  color: #7c8595;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 15px;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .navigation button.active {
-  background-color: #dbeafe;
-  color: #1d4ed8;
-  font-weight: 600;
+  background: #edf1ff;
+  color: #4b65e7;
+  font-weight: 800;
 }
 
+.navigation button:hover {
+  color: #405ad9;
+}
+
+.navigation button:focus-visible,
+.assignment-item:focus-visible,
+.notification-button:focus-visible {
+  outline: 2px solid #4d67eb;
+  outline-offset: 2px;
+}
+
+/* 화면 본문 */
 .content {
-  width: min(900px, 100%);
+  width: 100%;
   margin: 0 auto;
-  padding: 40px 24px;
-  box-sizing: border-box;
+  padding: 12px 17px 112px;
 }
 
 .content h2 {
-  margin-bottom: 24px;
+  margin: 6px 3px 17px;
+  color: #202530;
+  font-size: 19px;
+  font-weight: 800;
 }
 
 .panel {
-  padding: 24px;
-  margin-bottom: 20px;
-  background-color: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
+  margin: 0 0 16px;
+  padding: 18px;
+  background: #fff;
+  border: 1px solid #edf0f4;
+  border-radius: 18px;
+  box-shadow: 0 3px 12px rgba(35, 41, 52, 0.025);
 }
 
 .panel h3 {
-  margin-top: 0;
+  margin: 0 0 12px;
+  color: #232832;
+  font-size: 15px;
+  font-weight: 800;
 }
 
 .panel p {
-  color: #6b7280;
+  margin: 6px 0;
+  color: #88909f;
+  font-size: 13px;
+  line-height: 1.65;
 }
-
-@media (max-width: 600px) {
-  .header {
-    padding: 20px;
-  }
-
-  .navigation {
-    padding: 12px;
-    gap: 4px;
-    justify-content: space-between;
-  }
-
-  .navigation button {
-    padding: 10px;
-    font-size: 13px;
-  }
-
-  .content {
-    padding: 24px 16px;
-  }
-}
-
 
 .notification-item {
-  padding: 16px 0;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 15px 0;
+  border-bottom: 1px solid #edf0f4;
 }
 
 .notification-item:last-child {
   border-bottom: none;
+  padding-bottom: 0;
 }
 
-.notification-item strong {
-  font-size: 15px;
-  color: #111827;
+.notification-item:first-child {
+  padding-top: 2px;
 }
 
-.notification-item p {
-  margin: 8px 0 0;
-  color: #6b7280;
-  font-size: 13px;
+.notification-item strong,
+.notification-button strong {
+  color: #242935;
+  font-size: 14px;
+  font-weight: 700;
 }
 
-
-.assignment-item {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-  margin-bottom: 12px;
-  padding: 18px;
-  text-align: left;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  cursor: pointer;
+.notification-item p,
+.notification-button span {
+  margin: 6px 0 0;
+  color: #8992a0;
+  font-size: 12px;
+  line-height: 1.5;
 }
-
-.assignment-item:hover {
-  background: #f3f7ff;
-  border-color: #93c5fd;
-}
-
-.assignment-item strong {
-  color: #111827;
-  font-size: 16px;
-}
-
-.assignment-item span {
-  color: #6b7280;
-  font-size: 13px;
-}
-
 
 .notification-button {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 5px;
   width: 100%;
   padding: 0;
-  border: none;
+  border: 0;
   background: transparent;
   text-align: left;
+  font: inherit;
   cursor: pointer;
 }
 
-.notification-button strong {
-  font-size: 15px;
-  color: #111827;
-}
-
-.notification-button span {
-  font-size: 13px;
-  color: #6b7280;
-}
-
 .notification-button:hover strong {
-  color: #2563eb;
+  color: #4a64e5;
 }
 
-.notification-button:focus-visible {
-  outline: 2px solid #2563eb;
-  outline-offset: 4px;
-  border-radius: 4px;
+.assignment-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 17px;
+  background: #fff;
+  border: 1px solid #edf0f4;
+  border-radius: 16px;
+  text-align: left;
+  font: inherit;
+  box-shadow: 0 3px 12px rgba(35, 41, 52, 0.025);
+  cursor: pointer;
+}
+
+.assignment-item:hover {
+  background: #f8faff;
+  border-color: #bbc7ff;
+}
+
+.assignment-item strong {
+  color: #242935;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.assignment-item span {
+  color: #8992a0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (min-width: 700px) {
+  .app {
+    min-height: 100vh;
+  }
+}
+
+@media (max-width: 360px) {
+  .content {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+  .navigation {
+    width: calc(100% - 18px);
+  }
+  .navigation button {
+    font-size: 11px;
+  }
+}
+
+/* 과제 상세: 목록으로 돌아가기 버튼 */
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: #edf1ff;
+  color: #4b65e7;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.back-button:hover {
+  background: #e2e8ff;
+}
+
+.back-button:focus-visible {
+  outline: 2px solid #4d67eb;
+  outline-offset: 2px;
 }

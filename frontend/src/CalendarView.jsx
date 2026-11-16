@@ -1,0 +1,140 @@
+import ScheduleManager from './ScheduleManager'
+import { useEffect, useState } from 'react'
+
+const seoulDate = (value) =>
+  new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(value))
+
+export default function CalendarView() {
+  const [month, setMonth] = useState(() => new Date())
+  const [events, setEvents] = useState([])
+  const [refreshKey, setRefreshKey] = useState(0)
+  const [selectedDay, setSelectedDay] = useState(new Date().getDate())
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
+
+  const year = month.getFullYear()
+  const monthIndex = month.getMonth()
+  const days = new Date(year, monthIndex + 1, 0).getDate()
+  const offset = new Date(year, monthIndex, 1).getDay()
+
+  useEffect(() => {
+    const controller = new AbortController()
+    const from = `${year}-${String(monthIndex + 1).padStart(2, '0')}-01T00:00:00+09:00`
+    const toDate = new Date(year, monthIndex + 1, 1)
+    const to = `${toDate.getFullYear()}-${String(toDate.getMonth() + 1).padStart(2, '0')}-01T00:00:00+09:00`
+
+    setLoading(true)
+    setError('')
+
+    fetch(`/api/calendar/events?${new URLSearchParams({ from, to })}`, {
+      credentials: 'include',
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`일정 조회 실패 (${response.status})`)
+        return response.json()
+      })
+      .then((data) => setEvents(data.events ?? []))
+      .catch((err) => {
+        if (err.name !== 'AbortError') setError(err.message)
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false)
+      })
+
+    return () => controller.abort()
+  }, [year, monthIndex, refreshKey])
+
+  const dateKey = (day) =>
+    `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+
+  const eventsForDay = (day) =>
+    events.filter((event) => {
+      const time = event.dueAt ?? event.startAt
+      return time && seoulDate(time) === dateKey(day)
+    })
+
+  const changeMonth = (delta) => {
+    setMonth(new Date(year, monthIndex + delta, 1))
+    setSelectedDay(1)
+  }
+
+  return (
+    <section className="panel">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+        <button type="button" onClick={() => changeMonth(-1)}>이전 달</button>
+        <h2>{year}년 {monthIndex + 1}월</h2>
+        <button type="button" onClick={() => changeMonth(1)}>다음 달</button>
+      </div>
+
+      {loading && <p>일정을 불러오는 중...</p>}
+      {error && <p role="alert">{error}</p>}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 5 }}>
+        {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
+          <div key={day} style={{ textAlign: 'center', fontWeight: 700 }}>{day}</div>
+        ))}
+
+        {Array.from({ length: offset }, (_, index) => (
+          <div key={`empty-${index}`} />
+        ))}
+
+        {Array.from({ length: days }, (_, index) => {
+          const day = index + 1
+          const count = eventsForDay(day).length
+
+          return (
+            <button
+              type="button"
+              key={day}
+              onClick={() => setSelectedDay(day)}
+              style={{
+                minHeight: 65,
+                padding: 5,
+                border: day === selectedDay ? '2px solid #2563eb' : '1px solid #ddd',
+                borderRadius: 7,
+                background: day === selectedDay ? '#eff6ff' : '#fff',
+                color: '#111827',
+                textAlign: 'left',
+                cursor: 'pointer',
+              }}
+            >
+              <strong>{day}</strong>
+              {count > 0 && (
+                <div style={{ fontSize: 11, color: '#2563eb', overflowWrap: 'anywhere' }}>
+                  일정 {count}개
+                </div>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      <h3>{monthIndex + 1}월 {selectedDay}일 일정</h3>
+      <ScheduleManager
+        date={dateKey(selectedDay)}
+        events={eventsForDay(selectedDay)}
+        onChanged={() => setRefreshKey((value) => value + 1)}
+      />
+
+      {eventsForDay(selectedDay).length === 0 ? (
+        <p>등록된 일정이 없습니다.</p>
+      ) : (
+        <ul>
+          {eventsForDay(selectedDay).map((event) => (
+            <li key={`${event.source}-${event.id}`} style={{ marginBottom: 12 }}>
+              <strong>{event.title}</strong>
+              <div>{event.courseName ?? event.course ?? (event.source === 'assignment' ? '과제' : '개인 일정')}</div>
+              <small>{new Date(event.dueAt ?? event.startAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</small>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
