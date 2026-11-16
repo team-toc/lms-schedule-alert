@@ -9,12 +9,15 @@ import { createGoogleClient } from './google/google-client.js'
 import { createPasswordHasher } from './email/password-hasher.js'
 import { createDummyPasswordHash } from './accounts/email-account-service.js'
 import { createLmsServices } from './lms/lms-services.js'
+import { loadClassPeriodsOrExit } from './suggestions/class-periods.js'
 import { createApp } from './app.js'
 import { createShutdown } from './shutdown.js'
 
 const config = loadConfigOrExit()
 // Canvas 설정(주소 · 토큰 암호화 키)은 서버에만 필요하다. DB에 연결하기 전에 검사해 틀리면 키 이름만 출력하고 종료 (ADR 0008)
 const lmsConfig = loadLmsConfigOrExit(process.env, { isProduction: config.isProduction })
+// 교시 시간표(공지 일정 제안의 "N교시" → 시각, ADR 0011). 틀리면 DB에 연결하기 전에 종료
+const classPeriods = await loadClassPeriodsOrExit(new URL('../config/class-periods.json', import.meta.url))
 const logger = createLogger({ level: config.logLevel })
 if (config.isProduction && !config.trustProxy) {
   logger.warn({ event: 'trust_proxy_disabled' }, 'production without TRUST_PROXY: Secure cookies are not issued behind a proxy')
@@ -27,7 +30,7 @@ const googleClient = createGoogleClient({ config: config.google })
 // 없는 이메일 로그인용 가짜 해시: 실제 해시와 같은 모듈 · 파라미터로 시작할 때 한 번만 만든다 (ADR 0007)
 const passwordHasher = createPasswordHasher()
 const dummyPasswordHash = await createDummyPasswordHash(passwordHasher)
-const lmsServices = createLmsServices({ pool, logger, lmsConfig })
+const lmsServices = createLmsServices({ pool, logger, lmsConfig, classPeriods })
 const app = createApp({ config, logger, pool, kakaoClient, googleClient, sessionStore, passwordHasher, dummyPasswordHash, lmsServices })
 // Canvas · iCloud 두 실행기를 함께 시작 · 정지 · 대기 (shutdown.js는 실행기 하나처럼 다룬다)
 const runners = [lmsServices.syncRunner, lmsServices.calendarSyncRunner]

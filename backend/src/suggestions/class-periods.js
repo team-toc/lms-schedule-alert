@@ -58,3 +58,16 @@ export async function loadClassPeriods(path) {
   }
   return parseClassPeriods(raw)
 }
+
+// 서버 시작용: 틀리면 이유만 출력하고 종료 (설정 오류와 같은 방식)
+export async function loadClassPeriodsOrExit(path) {
+  try {
+    return await loadClassPeriods(path)
+  } catch (err) {
+    if (!(err instanceof ClassPeriodsError)) {
+      throw err
+    }
+    console.error(`교시 시간표 설정 오류: ${err.message}`)
+    process.exit(1)
+  }
+}
