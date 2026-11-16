@@ -2,7 +2,8 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { openTestDb } from './helpers/test-db.js'
+import { openTestDb, buildTestConfig, testDbConnectionEnv } from './helpers/test-db.js'
+import { childProcessEnv } from './helpers/child-env.js'
 
 const BACKEND_DIR = fileURLToPath(new URL('..', import.meta.url))
 const PROCESS_TIMEOUT_MS = 30000
@@ -11,7 +12,8 @@ const EXPECTED_LAST_MIGRATION = '0007_add_email_provider'
 function runReset(envOverrides = {}) {
   return spawnSync(process.execPath, ['scripts/reset-test-db.js'], {
     cwd: BACKEND_DIR,
-    env: { ...process.env, ...envOverrides },
+    // 테스트 DB 접속 정보만 넘기고 개발자 .env는 읽지 않게 한다
+    env: childProcessEnv({ ...testDbConnectionEnv(), ...envOverrides }),
     encoding: 'utf8',
     timeout: PROCESS_TIMEOUT_MS,
   })
@@ -40,7 +42,7 @@ describe('npm run test:db:reset', () => {
 
   it('테스트 DB를 비우고 0001부터 다시 적용한다 (데이터 · 꼬인 기록 모두 정리)', async () => {
     const db = await openTestDb()
-    const database = process.env.TEST_DB_NAME
+    const database = buildTestConfig().db.database
     try {
       await db.pool.execute('INSERT INTO users (display_name) VALUES (?)', ['지워질 사용자'])
       // 지난번처럼 기록이 꼬인 상태를 흉내 낸다: 0004 기록을 지운다

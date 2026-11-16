@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { createKakaoClient, KakaoApiError } from '../src/kakao/kakao-client.js'
+import { timeoutError } from './helpers/fake-google.js'
 
 const KAKAO_CONFIG = {
   restApiKey: 'fake-rest-api-key',
@@ -83,6 +84,27 @@ describe('카카오 클라이언트 (경계 레이어)', () => {
     const client = createKakaoClient({ config: KAKAO_CONFIG, fetchFn })
 
     await assert.rejects(client.exchangeCodeForToken('code-xyz'), KakaoApiError)
+  })
+
+  it('토큰 교환: 타임아웃 → KakaoApiError, 요청에 타임아웃 신호가 붙어 있다', async () => {
+    const { fetchFn, requests } = createFakeFetch(timeoutError())
+    const client = createKakaoClient({ config: KAKAO_CONFIG, fetchFn })
+
+    await assert.rejects(client.exchangeCodeForToken('code-xyz'), (err) => {
+      assert.ok(err instanceof KakaoApiError)
+      assert.equal(err.stage, 'token_exchange')
+      return true
+    })
+    assert.equal(requests.length, 1)
+    assert.ok(requests[0].signal instanceof AbortSignal, '타임아웃이 걸리려면 fetch에 signal을 넘겨야 함')
+  })
+
+  it('사용자 조회: 타임아웃 → KakaoApiError(user_profile)', async () => {
+    const { fetchFn, requests } = createFakeFetch(timeoutError())
+    const client = createKakaoClient({ config: KAKAO_CONFIG, fetchFn })
+
+    await assert.rejects(client.fetchUserProfile('token-abc'), (err) => err instanceof KakaoApiError && err.stage === 'user_profile')
+    assert.ok(requests[0].signal instanceof AbortSignal)
   })
 
   it('토큰 교환: 200이지만 access_token이 없으면 KakaoApiError', async () => {

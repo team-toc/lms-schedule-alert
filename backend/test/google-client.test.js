@@ -11,19 +11,18 @@ import {
   jsonResponse,
   tokenResponseBody,
   networkError,
-  neverResponds,
+  timesOut,
   DEFAULT_GOOGLE_SUB,
   DEFAULT_GOOGLE_NAME,
 } from './helpers/fake-google.js'
 
 const CODE = 'auth-code-MUST-NOT-LEAK'
 const NONCE = 'nonce-0123456789abcdef0123456789abcdef'
-const SHORT_TIMEOUT_MS = 30
 const SUB_MAX_LENGTH = 255
 
-function setup({ timeoutMs } = {}) {
+function setup() {
   const endpoint = createFakeGoogleTokenEndpoint()
-  const client = createGoogleClient({ config: GOOGLE_TEST_CONFIG, fetchFn: endpoint.fetchFn, timeoutMs })
+  const client = createGoogleClient({ config: GOOGLE_TEST_CONFIG, fetchFn: endpoint.fetchFn })
   return { endpoint, client }
 }
 
@@ -137,12 +136,13 @@ describe('Google 클라이언트: 토큰 교환 실패 (재시도 없음)', () =
     })
   })
 
-  it('응답이 없으면 타임아웃 후 GoogleApiError(token_exchange), 요청 1번', async () => {
-    const { endpoint, client } = setup({ timeoutMs: SHORT_TIMEOUT_MS })
-    endpoint.respond(CODE, neverResponds)
+  it('타임아웃 → GoogleApiError(token_exchange), 요청 1번, 요청에 타임아웃 신호가 붙어 있다', async () => {
+    const { endpoint, client } = setup()
+    endpoint.respond(CODE, timesOut)
 
     await assert.rejects(client.exchangeCodeForProfile(CODE, { nonce: NONCE }), assertGoogleApiError('token_exchange'))
     assert.equal(endpoint.requests.length, 1)
+    assert.ok(endpoint.requests[0].signal instanceof AbortSignal, '타임아웃이 걸리려면 fetch에 signal을 넘겨야 함')
   })
 })
 
