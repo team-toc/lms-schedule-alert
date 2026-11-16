@@ -19,13 +19,23 @@ import { createLimiter } from '../sync/limiter.js'
 const DEFAULT_SYNC_CONCURRENCY = 2
 
 // icloudFetchFn: iCloud 공개 캘린더 요청용 fetch(테스트는 가짜). 동시 실행 상한은 Canvas · iCloud 실행기가 제한기 하나를 함께 쓴다(ADR 0010)
-export function createLmsServices({ pool, logger, lmsConfig, fetchFn = globalThis.fetch, icloudFetchFn = globalThis.fetch, now = () => new Date() }) {
+// afterCanvasApplied: Canvas 반영이 커밋된 뒤 같은 사용자 잠금 안에서 부를 후속 작업(ADR 0011)
+export function createLmsServices({ pool, logger, lmsConfig, fetchFn = globalThis.fetch, icloudFetchFn = globalThis.fetch, now = () => new Date(), afterCanvasApplied = null }) {
   const limit = createLimiter(lmsConfig.syncConcurrency ?? DEFAULT_SYNC_CONCURRENCY)
   const canvasClient = createCanvasClient({ baseUrl: lmsConfig.canvasBaseUrl, fetchFn })
   const tokenCipher = createTokenCipher({ key: lmsConfig.tokenKey })
   const tokenRepository = createLmsTokenRepository(pool, { logger })
   const syncRepository = createLmsSyncRepository(pool, { logger })
-  const lmsSync = createLmsSync({ canvasClient, tokenCipher, tokenRepository, syncRepository, baseUrl: lmsConfig.canvasBaseUrl, now, logger })
+  const lmsSync = createLmsSync({
+    canvasClient,
+    tokenCipher,
+    tokenRepository,
+    syncRepository,
+    baseUrl: lmsConfig.canvasBaseUrl,
+    now,
+    logger,
+    afterApplied: afterCanvasApplied,
+  })
   const syncRunner = createSyncRunner({
     lmsSync,
     listTargets: tokenRepository.listSyncTargets,

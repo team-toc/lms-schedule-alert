@@ -48,6 +48,21 @@ async function recordFailed({ tokenRepository, logger }, { userId, tokenEnc }, e
   return { outcome: 'failed', errorCode }
 }
 
+// 반영이 커밋된 뒤의 후속 작업(ADR 0011: 공지 일정 제안). 같은 사용자 잠금 안에서 돈다.
+// 에러는 이름 · 코드만 로그로 남기고 삼킨다: Canvas 반영 결과(applied)는 바뀌지 않는다
+// 알림은 개수만 남긴다(제목 · 본문 · 링크 없음, ADR 0009)
+async function finishApplied({ logger, afterApplied }, { userId, at, courses, notifications }) {
+  logger.info({ event: 'lms_sync_applied', userId, courses, notifications }, 'lms sync applied')
+  if (afterApplied) {
+    try {
+      await afterApplied({ userId, at })
+    } catch (err) {
+      logger.error({ event: 'lms_after_applied_failed', userId, err: { name: err?.name, code: err?.code } }, 'after-applied step failed')
+    }
+  }
+  return { outcome: 'applied' }
+}
+
 // 이 프로세스에서 사용자별로 진행 중인 동기화. 실행기가 "이미 실행 중"으로 건너뛴 뒤 끝나기를 기다릴 때 쓴다
 function createRunningTracker() {
   const running = new Map()
@@ -69,7 +84,8 @@ function createRunningTracker() {
   }
 }
 
-export function createLmsSync({ canvasClient, tokenCipher, tokenRepository, syncRepository, baseUrl, now, logger }) {
+// afterApplied({ userId, at }): 반영이 실제로 커밋됐을 때만 부른다(실패 · token_changed · not_connected · already_running이면 안 부름)
+export function createLmsSync({ canvasClient, tokenCipher, tokenRepository, syncRepository, baseUrl, now, logger, afterApplied = null }) {
   const { fetchSnapshot } = createSnapshotFetcher({ canvasClient, baseUrl, logger })
   const tracker = createRunningTracker()
   const fail = (scope, errorCode, details) => recordFailed({ tokenRepository, logger }, scope, errorCode, details)
@@ -101,9 +117,7 @@ export function createLmsSync({ canvasClient, tokenCipher, tokenRepository, sync
       logger.info({ event: 'lms_sync_discarded', userId, reason: 'token_changed' }, 'token changed during sync, result discarded')
       return { outcome: 'skipped', reason: 'token_changed' }
     }
-    // 알림은 개수만 남긴다(제목 · 본문 · 링크 없음, ADR 0009)
-    logger.info({ event: 'lms_sync_applied', userId, courses: snapshot.courses.length, notifications: applied.notifications }, 'lms sync applied')
-    return { outcome: 'applied' }
+    return finishApplied({ logger, afterApplied }, { userId, at, courses: snapshot.courses.length, notifications: applied.notifications })
   }
 
   // 결과: { outcome: 'applied' } | { outcome: 'failed', errorCode } | { outcome: 'skipped', reason }
