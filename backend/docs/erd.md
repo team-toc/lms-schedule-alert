@@ -1,6 +1,6 @@
 # ERD (백엔드 DB)
 
-현재 마이그레이션(`migrations/0001` ~ `0020`) 기준으로 **실제로 있는 테이블만** 그린다. 마이그레이션을 추가하면 같은 커밋에서 이 문서도 고친다.
+현재 마이그레이션(`migrations/0001` ~ `0022`) 기준으로 **실제로 있는 테이블만** 그린다. 마이그레이션을 추가하면 같은 커밋에서 이 문서도 고친다.
 
 - 문자셋 utf8mb4, 시간 칼럼은 UTC로 저장 (`DATETIME(3)`, 밀리초까지)
 - 마이그레이션 실행 기록 `schema_migrations`는 도구의 장부라 그리지 않는다
@@ -24,6 +24,11 @@ erDiagram
     users ||--o{ calendar_links : "외부 캘린더 연결, 최대 5개 (ON DELETE CASCADE)"
     users ||--o{ schedules : "일정 (ON DELETE CASCADE)"
     calendar_links ||--o{ schedules : "가져온 일정 (ON DELETE CASCADE)"
+    lms_tokens ||--o{ announcement_scans : "공지 훑은 기록 (ON DELETE CASCADE)"
+    announcements ||--o{ announcement_scans : "훑은 공지"
+    lms_tokens ||--o{ suggestions : "일정 제안 (ON DELETE CASCADE)"
+    announcements ||--o{ suggestions : "제안을 뽑은 공지"
+    schedules |o--o{ suggestions : "수락해서 만든 앱 일정 (ON DELETE SET NULL)"
 
     users {
         bigint_unsigned id PK "AUTO_INCREMENT"
@@ -163,6 +168,30 @@ erDiagram
         datetime(3) updated_at "NOT NULL, 행이 바뀌면 자동 갱신"
     }
 
+    announcement_scans {
+        bigint_unsigned user_id PK "FK → lms_tokens.user_id"
+        bigint_unsigned announcement_id PK "FK → announcements.id"
+        char(64) content_hash "NOT NULL, ascii, 훑은 공지 내용 해시 (같으면 다시 훑지 않음)"
+        datetime(3) scanned_at "NOT NULL"
+    }
+
+    suggestions {
+        bigint_unsigned id PK "AUTO_INCREMENT"
+        bigint_unsigned user_id FK "NOT NULL → lms_tokens.user_id"
+        bigint_unsigned announcement_id FK "NOT NULL → announcements.id"
+        char(64) candidate_key "NOT NULL, ascii, sha256(시작 · 끝 · 하루 종일) hex, 종류 제외"
+        enum kind "NOT NULL, 'exam' | 'cancellation' | 'makeup' | 'deadline' | 'other'"
+        datetime(3) start_at "NOT NULL, UTC"
+        datetime(3) end_at "NOT NULL, UTC, start_at보다 뒤 (CHECK)"
+        boolean is_all_day "NOT NULL, 기본 FALSE"
+        varchar(80) context "NOT NULL, 원문 앞뒤 맥락 (최대 60자, 본문 전체 저장 안 함)"
+        enum status "NOT NULL, 'pending' | 'accepted' | 'rejected', 기본 'pending' (만료는 계산)"
+        bigint_unsigned schedule_id FK "NULL → schedules.id (수락해서 만든 앱 일정)"
+        datetime(3) created_at "NOT NULL"
+        datetime(3) updated_at "NOT NULL, 행이 바뀌면 자동 갱신"
+        datetime(3) decided_at "NULL, 수락 · 거절 시각"
+    }
+
     sessions {
         varchar(128) session_id PK "utf8mb4_bin"
         int_unsigned expires "NOT NULL, 만료 시각(유닉스 초), 인덱스"
@@ -230,6 +259,19 @@ erDiagram
 | schedules | `chk_schedules_source_link` · `chk_schedules_source_external` | CHECK | 앱 일정 ⇔ 연결 · `external_id` 없음, 외부 일정은 둘 다 있음 |
 | schedules | `fk_schedules_user` | FK | `user_id` → `users.id`, ON DELETE CASCADE |
 | schedules | `fk_schedules_calendar_link` | FK | `calendar_link_id` → `calendar_links.id`, ON DELETE CASCADE |
+| announcement_scans | PRIMARY | PK (복합) | `user_id`, `announcement_id` (사용자 · 공지당 한 행) |
+| announcement_scans | `idx_announcement_scans_announcement` | 인덱스 | `announcement_id` (FK) |
+| announcement_scans | `fk_announcement_scans_token_user` | FK | `user_id` → `lms_tokens.user_id`, ON DELETE CASCADE (연동 해제 · 사용자 삭제 때 지워짐) |
+| announcement_scans | `fk_announcement_scans_announcement` | FK | `announcement_id` → `announcements.id` (CASCADE 아님) |
+| suggestions | PRIMARY | PK | `id` (목록 최신순 · 커서) |
+| suggestions | `uq_suggestions_user_announcement_candidate` | UNIQUE (복합) | `user_id`, `announcement_id`, `candidate_key` (같은 공지 · 같은 시각은 한 제안) |
+| suggestions | `idx_suggestions_user_status` | 인덱스 (복합) | `user_id`, `status`, `id` (내 대기 · 처리한 제안 목록) |
+| suggestions | `idx_suggestions_announcement` · `idx_suggestions_schedule` | 인덱스 | `announcement_id` · `schedule_id` (FK) |
+| suggestions | `chk_suggestions_time` | CHECK | `start_at < end_at` |
+| suggestions | `chk_suggestions_candidate_key` | CHECK | `candidate_key`는 소문자 hex 64자 |
+| suggestions | `fk_suggestions_token_user` | FK | `user_id` → `lms_tokens.user_id`, ON DELETE CASCADE |
+| suggestions | `fk_suggestions_announcement` | FK | `announcement_id` → `announcements.id` (CASCADE 아님) |
+| suggestions | `fk_suggestions_schedule` | FK | `schedule_id` → `schedules.id`, ON DELETE SET NULL (일정이 지워져도 제안은 남음) |
 | sessions | PRIMARY | PK | `session_id` |
 | sessions | `idx_sessions_expires` | 인덱스 | `expires` (만료 세션 정리용) |
 
@@ -273,4 +315,14 @@ erDiagram
 - 원본에서 사라진 일정 · 앱에서 지운 일정은 `deleted_at`. 조회 · 겹침은 `deleted_at IS NULL` · `status <> 'cancelled'`만.
 - 연결을 지우면 그 연결의 일정도 함께 지워진다(FK CASCADE). 사용자를 지우면 연결 · 일정 모두 지워진다.
 - 되돌리기 보호: 0019 ~ 0020의 down은 행이 있으면 실패하고 지우지 않는다.
+
+### 공지 일정 제안 (0021 ~ 0022, ADR 0011)
+
+- 공지 본문(HTML)에서 규칙으로 날짜 · 시각 · 종류를 뽑아 **사용자별 제안**(`suggestions`)으로 둔다. 사용자가 수락하면 `source = 'app'` 앱 일정을 만들고 `schedule_id`로 잇는다(`schedules`는 그대로). 거절 · 수락한 제안은 다시 추출해도 바꾸지 않는다.
+- `candidate_key`는 시작 · 끝 · 하루 종일만으로 만든다(종류 제외): 분류 규칙이 바뀌어도 같은 시각은 한 제안. 다시 추출해 종류가 바뀌면 대기 제안의 `kind`만 고친다.
+- 만료(대기인데 시각이 지남)는 칼럼이 아니라 조회 때 계산한다.
+- `announcement_scans`: 사용자별로 공지를 어느 `content_hash`까지 훑었는지. 같으면 다시 훑지 않는다(재동기화 멱등).
+- 두 표의 `user_id`는 `lms_tokens(user_id)`(UNIQUE)를 가리킨다: **연동 해제 · 사용자 삭제 때 같은 DELETE 안에서 함께 지워지고**, 수락해서 만든 앱 일정은 남는다. 토큰 교체 · 재등록은 `INSERT … ON DUPLICATE KEY UPDATE`(행 UPDATE)라 제안이 남는다.
+- 공지 본문은 저장하지 않는다(맥락 60자만).
+- 되돌리기 보호: 0021 ~ 0022의 down은 행이 있으면 실패하고 지우지 않는다.
 
