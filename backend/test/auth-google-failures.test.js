@@ -11,7 +11,7 @@ import {
   jsonResponse,
   tokenResponseBody,
   networkError,
-  neverResponds,
+  timesOut,
 } from './helpers/fake-google.js'
 import { sessionCookieFrom, sessionIdFrom, assertLoginErrorRedirect } from './helpers/auth-flow.js'
 import { startGoogleLogin, googleCallback } from './helpers/google-flow.js'
@@ -19,7 +19,6 @@ import { readOurSessionData } from './helpers/session-data.js'
 import { createGoogleClient } from '../src/google/google-client.js'
 
 const SENSITIVE_CODE = 'google-auth-code-MUST-NOT-LEAK'
-const SHORT_TIMEOUT_MS = 30
 
 function createCapturingLogger() {
   const lines = []
@@ -31,8 +30,8 @@ describe('Google 콜백 실패 경로', () => {
   let ctx
   let endpoint
 
-  function buildApp({ logger, timeoutMs } = {}) {
-    const googleClient = createGoogleClient({ config: GOOGLE_TEST_CONFIG, fetchFn: endpoint.fetchFn, timeoutMs })
+  function buildApp({ logger } = {}) {
+    const googleClient = createGoogleClient({ config: GOOGLE_TEST_CONFIG, fetchFn: endpoint.fetchFn })
     return ctx.buildApp(createFakeKakaoClient(), { googleClient, logger })
   }
 
@@ -52,11 +51,11 @@ describe('Google 콜백 실패 경로', () => {
     ['토큰 교환 실패(400 invalid_grant)', () => () => jsonResponse(400, { error: 'invalid_grant' })],
     ['사용자 확인 실패(aud 불일치)', () => () => jsonResponse(200, tokenResponseBody(makeIdToken(idTokenClaims({ aud: 'other' }))))],
     ['네트워크 오류', () => networkError],
-    ['타임아웃', () => neverResponds],
+    ['타임아웃', () => timesOut],
   ]
   for (const [label, makeResponder] of failures) {
     it(`6. ${label} → google_api_failed, 세션 발급 안 됨, 토큰 요청 1번`, async () => {
-      const agent = request.agent(buildApp({ timeoutMs: SHORT_TIMEOUT_MS }))
+      const agent = request.agent(buildApp())
       const { state } = await startGoogleLogin(agent)
       endpoint.respond(SENSITIVE_CODE, makeResponder())
 

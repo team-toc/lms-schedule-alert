@@ -4,7 +4,7 @@ Node.js + Express API 서버. 카카오 로그인과 MariaDB 세션을 다룬다
 
 ## 준비
 
-- Node.js 20 이상
+- **Node.js 22 이상** (Node 20에서는 Windows에서 `argon2` 미리 빌드된 바이너리가 세그폴트로 죽고, `npm test`의 glob 패턴(`"test/**/*.test.js"`)은 Node 21부터만 동작한다)
 - MariaDB (로컬 `127.0.0.1:3306`, 시간대 UTC · utf8mb4)
 - 앱 전용 DB 계정과 DB 두 개(개발 · 테스트). 관리자 계정으로 한 번만 실행한다.
 
@@ -103,13 +103,51 @@ export default defineConfig({
 
 세션 쿠키 `sid`: httpOnly · SameSite=Lax · 운영에서 Secure, 기본 7일이고 요청마다 연장된다.
 
-## 테스트
+## 테스트 실행
 
 ```bash
-npm test
+npm test        # 전체 테스트
+npm run lint    # 코드 규칙 검사
 ```
 
-`TEST_DB_NAME` DB를 쓰고 테스트마다 테이블을 비운다. 카카오 API는 가짜 클라이언트로 바꿔 실제로 호출하지 않는다.
+- 카카오 · Google API는 가짜 클라이언트로 바꿔 실제로 호출하지 않는다. 테스트마다 테스트 DB의 테이블을 비우고, 테이블은 테스트가 마이그레이션으로 만든다.
+- **`.env` 없이도 돈다.** 테스트는 환경에서 아래 DB 접속값만 읽고, 나머지 설정(세션 · 카카오 · Google 키, 프록시, 로그인 실패 제한 등)은 테스트 안에 고정돼 있다. `.env`가 있으면 거기 적힌 DB 접속값을 쓴다.
+
+### 테스트 DB 준비
+
+테스트 DB는 미리 만들어 두고, 테스트용 계정에 그 DB 권한(테이블 생성 · 삭제 · 변경 · 읽기 · 쓰기)을 준다.
+
+```sql
+CREATE DATABASE lms_schedule_alert_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+GRANT ALL PRIVILEGES ON lms_schedule_alert_test.* TO '<테스트 계정>'@'localhost';
+```
+
+- 이름은 **`_test`로 끝나야 하고 개발 DB(`DB_NAME`)와 달라야 한다.** 아니면 테스트가 시작 전에 거부한다(개발 DB를 비우지 않도록).
+
+### 환경변수
+
+| 키 | 필수 | 기본값 | 설명 |
+| --- | --- | --- | --- |
+| `DB_USER` | 예 | — | 테스트 DB에 접속할 계정 |
+| `DB_PASSWORD` | 예 | — | 그 계정의 비밀번호 |
+| `DB_HOST` | 아니요 | `127.0.0.1` | |
+| `DB_PORT` | 아니요 | `3306` | |
+| `TEST_DB_NAME` | 아니요 | `lms_schedule_alert_test` | `_test`로 끝나야 함 |
+
+```bash
+# .env 없이 (예: CI)
+DB_USER=... DB_PASSWORD=... npm test
+```
+
+### 주의
+
+- `npm test`는 테스트 파일을 **하나씩** 실행한다(`--test-concurrency=1`). 모든 파일이 같은 테스트 DB를 쓰기 때문에 이 옵션을 바꾸거나 `node --test`를 병렬로 돌리지 말 것. 마이그레이션 테스트끼리 겹치면 하나가 "다른 테스트가 마이그레이션 중"으로 바로 실패한다.
+- 같은 테스트 DB를 여러 곳(예: 동시에 도는 CI 잡 여러 개)에서 함께 쓰지 말 것.
+- 테스트 DB가 꼬였으면(마이그레이션 기록이 어긋남 등) 테스트 DB만 비우고 0001부터 다시 적용한다. 이름이 `_test`로 끝나지 않거나 개발 DB와 같으면 거부한다.
+
+  ```bash
+  npm run test:db:reset
+  ```
 
 ## 수동 테스트 (브라우저로 카카오 로그인)
 
