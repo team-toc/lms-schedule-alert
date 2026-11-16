@@ -17,6 +17,8 @@ import { createCalendarServices } from '../calendar/calendar-services.js'
 import { createLimiter } from '../sync/limiter.js'
 import { createRuleExtractor } from '../suggestions/rule-extractor.js'
 import { createSuggestionStep } from '../suggestions/suggestion-step.js'
+import { createSuggestionRepository } from '../suggestions/suggestion-repository.js'
+import { createSuggestionService } from '../suggestions/suggestion-service.js'
 
 const DEFAULT_SYNC_CONCURRENCY = 2
 
@@ -60,6 +62,7 @@ export function createLmsServices(options) {
     scheduleQueries: createScheduleQueries(pool),
     notificationRepository: createNotificationRepository(pool, { now }),
     scheduleService: createScheduleService({ repository: createScheduleRepository(pool), now }),
+    suggestionService: createSuggestionService({ repository: createSuggestionRepository(pool, { logger }), now }),
     ...createCalendarServices({ pool, logger, lmsConfig, icloudFetchFn, now, limit }),
   }
 }

@@ -1,6 +1,6 @@
 # 백엔드 API 설명서
 
-프론트엔드 연동용. 실제 코드(`src/app.js`, `src/auth/*`, `src/email/email-input.js`, `src/lms/*`, `src/calendar/*`) 기준으로 쓴다. 라우트를 추가 · 변경하는 커밋에서 이 문서도 같이 고친다(`test/api-doc.test.js`가 문서에 없는 라우트를 잡는다).
+프론트엔드 연동용. 실제 코드(`src/app.js`, `src/auth/*`, `src/email/email-input.js`, `src/lms/*`, `src/calendar/*`, `src/suggestions/*`) 기준으로 쓴다. 라우트를 추가 · 변경하는 커밋에서 이 문서도 같이 고친다(`test/api-doc.test.js`가 문서에 없는 라우트를 잡는다).
 
 - [1. 공통 사항](#1-공통-사항)
 - [2. 엔드포인트](#2-엔드포인트)
@@ -101,8 +101,8 @@ export default defineConfig({
 | 204 | 성공(본문 없음) | 로그아웃 · Canvas 연동 해제 |
 | 302 | 리다이렉트 | 소셜 로그인 시작 · 콜백 |
 | 400 `invalid_json` | `Content-Type: application/json`인데 본문이 올바른 JSON이 아니거나, 맨 바깥이 객체 · 배열이 아님(`null` 등) | JSON 본문을 받는 모든 API |
-| 400 (검증) | 입력 검증 실패. `field`로 어느 항목인지 알려 준다 | 이메일 가입 · 로그인, Canvas 토큰 등록, 캘린더 |
-| 401 | 로그인 안 됨 / 이미 로그아웃됨 / 이메일 · 비밀번호 틀림 (API마다 `error`가 다름) | `/me`, 로그아웃, 이메일 로그인, `/api/lms/*` · `/api/calendar/*` 전체 |
+| 400 (검증) | 입력 검증 실패. `field`로 어느 항목인지 알려 준다 | 이메일 가입 · 로그인, Canvas 토큰 등록, 캘린더, 제안 수락 |
+| 401 | 로그인 안 됨 / 이미 로그아웃됨 / 이메일 · 비밀번호 틀림 (API마다 `error`가 다름) | `/me`, 로그아웃, 이메일 로그인, `/api/lms/*` · `/api/calendar/*` · `/api/notifications/*` · `/api/suggestions/*` 전체 |
 | 404 `not_found` | `/api` 아래 없는 경로, 또는 있는 경로에 잘못된 메서드(예: `GET /api/auth/logout`). 405로 나누지 않는다 | `/api` 전체 |
 | 404 `lms_not_connected` | Canvas를 연결하지 않았는데 해제 · 동기화를 요청 | Canvas 연동 해제 · 수동 동기화 |
 | 409 | 이미 가입된 이메일 / Canvas 토큰을 다시 등록해야 함 | 이메일 가입, 수동 동기화 |
@@ -142,6 +142,9 @@ export default defineConfig({
 | GET | `/api/notifications` | 예 | 내 알림(Canvas 변경) 목록, 최신순 |
 | POST | `/api/notifications/read-all` | 예 | 내 알림 전부 읽음 |
 | POST | `/api/notifications/:id/read` | 예 | 알림 하나 읽음 |
+| GET | `/api/suggestions` | 예 | 공지에서 찾은 일정 제안 목록 |
+| POST | `/api/suggestions/:id/accept` | 예 | 제안 수락(앱 일정으로 만들기, 값 고치기 가능) |
+| POST | `/api/suggestions/:id/reject` | 예 | 제안 거절 |
 
 ### GET /api/health
 
@@ -697,6 +700,111 @@ iPhone · Mac 캘린더의 **공개 캘린더 링크**를 등록해 그 캘린�
 - 성공 **204** (본문 없음). 이미 읽은 알림도 204(읽은 시각은 처음 값 그대로)
 - 실패: **404** `notification_not_found` — 없는 id, **다른 사람의 알림**, 숫자가 아닌 id 모두 같은 응답
 
+### GET /api/suggestions
+
+Canvas 공지(제목 · 본문)에서 규칙으로 찾은 날짜를 **내** 일정 제안으로 보여 준다. 사용자가 수락해야 캘린더(앱 일정)에 들어간다. 제안은 Canvas 동기화 뒤 서버가 만든다(이 API는 읽기만).
+
+- 로그인 필요
+- 요청: 쿼리 모두 선택
+
+  ```text
+  GET /api/suggestions
+  GET /api/suggestions?status=accepted&limit=20&cursor=MjM
+  ```
+
+  | 쿼리 | 규칙 |
+  | --- | --- |
+  | `status` | `pending`(기본, 아직 안 정했고 날짜가 안 지남) · `expired`(안 정했는데 날짜가 지남) · `accepted` · `rejected` |
+  | `limit` | 1 ~ 50 정수, 기본 20 |
+  | `cursor` | 앞 페이지 응답의 `nextCursor`를 **그대로**, 같은 `status`로. 직접 만들지 말 것(불투명 값) |
+
+- 성공 **200**
+
+  ```json
+  {
+    "suggestions": [
+      {
+        "id": 23,
+        "kind": "exam",
+        "status": "pending",
+        "courseName": "자료구조",
+        "announcementTitle": "중간고사 안내",
+        "startAt": "2026-11-20T05:00:00.000Z",
+        "endAt": "2026-11-20T06:00:00.000Z",
+        "isAllDay": false,
+        "startDate": null,
+        "endDate": null,
+        "context": "중간고사는 11월 20일 오후 2시 공학관 301호에서 봅니다",
+        "url": "https://canvas.example.ac.kr/courses/101/discussion_topics/701",
+        "scheduleId": null,
+        "createdAt": "2026-11-13T00:00:01.000Z",
+        "decidedAt": null
+      }
+    ],
+    "nextCursor": null
+  }
+  ```
+
+  | 필드 | 타입 | 설명 |
+  | --- | --- | --- |
+  | `suggestions[].id` | number | 제안 id. 수락 · 거절에 쓴다 |
+  | `suggestions[].kind` | `"exam"` \| `"cancellation"` \| `"makeup"` \| `"deadline"` \| `"other"` | 시험 · 휴강 · 보강 · 마감 · 그 밖. 나중에 늘 수 있으니 모르는 값은 `other`처럼 |
+  | `suggestions[].status` | `"pending"` \| `"expired"` \| `"accepted"` \| `"rejected"` | `expired`는 저장된 값이 아니라 계산: 안 정한 제안 중 시각 일정은 시작 시각이, 하루 종일은 끝(서울 자정)이 지난 것 |
+  | `suggestions[].courseName` · `announcementTitle` | string | 과목 이름 · 공지 제목 |
+  | `suggestions[].startAt` · `endAt` | string | UTC ISO 8601. 시각만 적힌 공지는 1시간, 날짜만이면 하루 종일 |
+  | `suggestions[].isAllDay` | boolean | 하루 종일 |
+  | `suggestions[].startDate` · `endDate` | string \| null | 하루 종일이면 서울 날짜 `YYYY-MM-DD`(끝은 **미포함**: 11/20 ~ 11/22 범위면 `2026-11-20` ~ `2026-11-23`), 아니면 null |
+  | `suggestions[].context` | string | 날짜가 들어 있던 구절(최대 60자). 공지 본문 전체는 오지 않는다 |
+  | `suggestions[].url` | string \| null | Canvas 공지 페이지 |
+  | `suggestions[].scheduleId` | number \| null | 수락해서 만든 앱 일정 id. 그 일정을 지웠으면 null |
+  | `suggestions[].createdAt` · `decidedAt` | string \| null | 제안 만든 시각 · 수락 · 거절한 시각(UTC) |
+  | `nextCursor` | string \| null | 다음 페이지가 있으면 값, 마지막이면 null |
+
+  - 정렬: `pending`은 **시작 시각 빠른 순**(같으면 `id` 순, 다가오는 일정부터), 그 밖(`expired` · `accepted` · `rejected`)은 최신순(`id` 내림차순).
+  - 공지가 수정되면 안 정한 제안은 새 내용으로 바뀐다(없어진 날짜는 사라지고 새 날짜가 생김). 수락 · 거절한 제안과 만든 일정은 그대로. 거절한 날짜는 다시 제안하지 않는다.
+  - 공지 하나당 최대 5개. 지난 날짜는 제안하지 않는다(진행 중인 하루 종일 범위는 제안).
+  - 내 Canvas 목록에서 사라진 공지의 안 정한 제안은 지워진다. Canvas 연동을 해제하면 제안이 모두 지워진다(수락해서 만든 앱 일정은 남음).
+
+- 실패: 400
+
+  | `error` | 언제 |
+  | --- | --- |
+  | `invalid_status` | 위 네 값이 아님 |
+  | `invalid_limit` | 1 ~ 50 정수가 아님 |
+  | `invalid_cursor` | `cursor`가 받은 값이 아님(다른 `status`의 커서 포함) |
+
+### POST /api/suggestions/:id/accept
+
+제안을 앱 일정으로 만든다. 본문은 선택: 보낸 칸만 제안 값 위에 덮어쓴다.
+
+- 로그인 필요
+- 요청(선택): `{ "title"?, "startAt"?, "endAt"?, "isAllDay"? }` — 형식 · 검사는 [`PATCH /api/calendar/schedules/:id`](#patch-apicalendarschedulesid)와 같다(`isAllDay`를 보내면 `startAt` · `endAt` 둘 다 필요). 빈 본문 `{}`이면 제안 그대로
+  - 기본 제목: `종류: 공지 제목`(시험 · 휴강 · 보강 · 마감 · 일정, 255자까지)
+
+  ```json
+  { "title": "중간고사 (공학관)", "endAt": "2026-11-20T16:00:00+09:00" }
+  ```
+
+- 성공 **201**: `{ "suggestion": <목록 항목, status accepted>, "schedule": <앱 일정 항목> }`. `schedule`은 `POST /api/calendar/schedules` 응답과 같은 모양이고, 이후 `GET /api/calendar/events`에 `source: "app"`으로 나온다(수정 · 삭제도 앱 일정 API로)
+- 실패
+
+  | 상태 | `error` | 언제 |
+  | --- | --- | --- |
+  | 400 | 앱 일정 검사 코드(`invalid_range` · `missing_title` · `missing_start_at` 등, `field` 포함) | 고친 값이 틀림. 제안은 그대로 |
+  | 404 | `suggestion_not_found` | 없는 id · **다른 사람의 제안** · 숫자가 아닌 id 모두 같은 응답 |
+  | 409 | `suggestion_already_decided` | 이미 수락 · 거절함(만든 일정을 지웠어도 다시 수락 안 됨) |
+  | 409 | `suggestion_expired` | 날짜가 지난 제안. 거절은 할 수 있다 |
+
+  - 같은 제안을 동시에 두 번 수락하면 하나만 201, 나머지는 409(일정은 하나).
+
+### POST /api/suggestions/:id/reject
+
+제안을 거절한다. 본문 없음. 날짜가 지난(`expired`) 제안도 거절할 수 있다(목록 정리용).
+
+- 로그인 필요
+- 성공 **204** (본문 없음)
+- 실패: **404** `suggestion_not_found`(수락과 같음), **409** `suggestion_already_decided`
+
 ### GET /api/calendar/conflicts
 
 기간 안에서 **시간이 겹치는 내 일정 쌍**. 앱 일정 · 가져온 일정끼리(과제 마감은 포함하지 않음).
@@ -799,7 +907,7 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 
 | `error` | 상태 | 어디서 | 의미 | 프론트에서 할 일 |
 | --- | --- | --- | --- | --- |
-| `not_authenticated` | 401 | `GET /me`, `/api/lms/*` · `/api/calendar/*`(일정 포함) · `/api/notifications/*` | 로그인 안 됨 · 세션 만료 · 계정 삭제 | 로그인 화면으로 |
+| `not_authenticated` | 401 | `GET /me`, `/api/lms/*` · `/api/calendar/*`(일정 포함) · `/api/notifications/*` · `/api/suggestions/*` | 로그인 안 됨 · 세션 만료 · 계정 삭제 | 로그인 화면으로 |
 | `already_logged_out` | 401 | `POST /logout` | 이미 로그아웃 상태 | 로그아웃 성공처럼 처리(로그인 화면으로) |
 | `missing_email` | 400 | 이메일 가입 · 로그인 | 이메일 없음 | `field: email` 입력칸에 `message` 표시 |
 | `invalid_email` | 400 | 이메일 가입 · 로그인 | 이메일 형식 틀림 | 위와 같음 |
@@ -834,10 +942,14 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 | `calendar_link_invalid` | 409 | 수동 동기화 | 링크를 더 쓸 수 없음 | 연결을 지우고 다시 등록하라고 안내 |
 | `schedule_read_only` | 403 | 앱 일정 수정 · 삭제 | 가져온 캘린더의 일정 | 수정 · 삭제 버튼을 숨긴다(`source !== 'app'`) |
 | `schedule_not_found` | 404 | 앱 일정 수정 · 삭제 | 없음 · 다른 사람 · 지움 | 목록을 새로 불러온다 |
-| `invalid_cursor` | 400 | 알림 목록 | 커서가 받은 값이 아님 | 프론트 버그. `nextCursor`를 그대로 보낸다(없으면 첫 페이지부터) |
-| `invalid_limit` | 400 | 알림 목록 | `limit`이 1 ~ 50 정수가 아님 | 프론트 버그 |
+| `invalid_cursor` | 400 | 알림 · 제안 목록 | 커서가 받은 값이 아님 | 프론트 버그. `nextCursor`를 그대로 보낸다(없으면 첫 페이지부터) |
+| `invalid_limit` | 400 | 알림 · 제안 목록 | `limit`이 1 ~ 50 정수가 아님 | 프론트 버그 |
 | `invalid_unread` | 400 | 알림 목록 | `unread`가 `true` · `false`가 아님 | 프론트 버그 |
 | `notification_not_found` | 404 | 알림 읽음 | 없는 알림 · 다른 사람의 알림 | 목록을 새로 불러온다 |
+| `invalid_status` | 400 | 제안 목록 | `status`가 `pending` · `expired` · `accepted` · `rejected`가 아님 | 프론트 버그 |
+| `suggestion_not_found` | 404 | 제안 수락 · 거절 | 없음 · 다른 사람의 제안 | 목록을 새로 불러온다 |
+| `suggestion_already_decided` | 409 | 제안 수락 · 거절 | 이미 수락 · 거절함 | 목록을 새로 불러온다 |
+| `suggestion_expired` | 409 | 제안 수락 | 날짜가 지난 제안 | 수락 버튼을 숨기고 거절(정리)만 보여 준다 |
 | `lms_needs_reauth` | 409 | 수동 동기화 | 토큰 만료 · 취소 | 토큰을 다시 등록하라고 안내 |
 | `sync_too_frequent` | 429 | Canvas · 캘린더 수동 동기화 | 5분 안에 다시 요청 | `Retry-After`(초)만큼 동기화 버튼 비활성화 |
 | `canvas_rate_limited` | 503 | Canvas 토큰 등록 | Canvas 요청 한도 초과 | 위와 같음 |
