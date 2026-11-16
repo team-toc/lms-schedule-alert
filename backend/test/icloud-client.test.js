@@ -1,7 +1,7 @@
 import { describe, it, beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { createIcloudClient, IcloudFetchError, ICLOUD_ERRORS } from '../src/calendar/icloud-client.js'
-import { createFakeIcloud, icloudUrl, icsResponse, icloudFailures, hangUntilAborted, streamedBody, ICLOUD_HOST } from './helpers/fake-icloud.js'
+import { createFakeIcloud, icloudUrl, icsResponse, icloudFailures, streamedBody, timeoutReason, ICLOUD_HOST } from './helpers/fake-icloud.js'
 import { ics, vevent } from './helpers/ics-builder.js'
 
 const TOKEN = 'CLIENTtestTOKENsecret0000111122223333'
@@ -93,13 +93,18 @@ describe('iCloud 클라이언트', () => {
     }
   })
 
-  it('응답이 오지 않으면 timeoutMs 뒤 icloud_timeout, 본문이 중간에 멈춰도 icloud_timeout', async () => {
-    icloud.intercept(() => true, (req) => hangUntilAborted(req.init), { times: 1 })
+  // 실제 타이머를 기다리지 않는다: 응답 없음은 fetch가 TimeoutError로 거부하는 것으로, 본문 멈춤은 멈춘 순간 주입한 신호를 끊는 것으로
+  it('타임아웃: 응답이 오지 않아 fetch가 TimeoutError로 끝나면 icloud_timeout, 본문이 중간에 멈춘 채 신호가 끊겨도 icloud_timeout', async () => {
+    icloud.intercept(() => true, icloudFailures.timeoutError, { times: 1 })
     await assert.rejects(client.fetchCalendar(URL_A), (err) => assertIcloudError(err, ICLOUD_ERRORS.timeout))
+    assert.ok(icloud.requests[0].init.signal instanceof AbortSignal, '요청에 타임아웃 신호가 붙어 있다')
 
-    const stalled = streamedBody(10_000, { chunkBytes: 1000, stallAfter: 3000 })
+    const controller = new AbortController()
+    const stalling = createIcloudClient({ fetchFn: icloud.fetch, maxBytes: MAX_BYTES, createTimeoutSignal: () => controller.signal })
+    const stalled = streamedBody(10_000, { chunkBytes: 1000, stallAfter: 3000, onStall: () => controller.abort(timeoutReason()) })
     icloud.intercept(() => true, () => icsResponse(stalled.stream), { times: 1 })
-    await assert.rejects(client.fetchCalendar(URL_A), (err) => assertIcloudError(err, ICLOUD_ERRORS.timeout))
+    await assert.rejects(stalling.fetchCalendar(URL_A), (err) => assertIcloudError(err, ICLOUD_ERRORS.timeout))
+    assert.equal(stalled.pulled(), 3000, '멈출 때까지 읽다가 신호가 끊기면 그만둔다')
   })
 
   it('크기 상한: Content-Length가 넘으면 읽지 않고, 길이 없이 흘러와도 상한을 넘는 순간 끊고 icloud_too_large', async () => {

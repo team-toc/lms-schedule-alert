@@ -2,6 +2,8 @@
 // 등록된 링크는 200 text/calendar, 없는 published 토큰은 400(본문 없음). 리다이렉트는 fetch 기본 동작(따라감)을 흉내 내
 // redirect 옵션이 'manual'이 아니면 헤더째 따라간다("가장 나쁜 fetch"). iCloud가 아닌 호스트로 간 요청은 따로 모은다.
 export const ICLOUD_HOST = 'p52-caldav.icloud.com'
+// AbortSignal.timeout이 끝났을 때의 이유(reason)와 같은 에러
+export const timeoutReason = () => new DOMException('The operation was aborted due to timeout', 'TimeoutError')
 const HTTP_OK = 200
 const HTTP_BAD_REQUEST = 400
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308])
@@ -22,23 +24,24 @@ export const icloudFailures = {
   rateLimited: () => new Response('slow down', { status: 429 }),
   html: () => icsResponse('<html>maintenance</html>', { contentType: 'text/html' }),
   networkError: () => Promise.reject(new TypeError('fetch failed')),
-  timeoutError: () => Promise.reject(new DOMException('The operation was aborted due to timeout', 'TimeoutError')),
+  // AbortSignal.timeout이 끝났을 때 fetch가 내는 것과 같은 에러로 바로 거부한다(실제 타이머를 기다리지 않음:
+  // 그 타이머는 이벤트 루프를 붙잡지 않아 Node 22에서 테스트가 먼저 끝나 버린다)
+  timeoutError: () => Promise.reject(timeoutReason()),
   redirect: (location, status = 301) => new Response(null, { status, headers: { Location: location } }),
 }
 
-// 신호(abort)가 올 때까지 응답하지 않는다 (타임아웃 확인용)
-export function hangUntilAborted(init) {
-  return new Promise((resolve, reject) => {
-    init.signal?.addEventListener('abort', () => reject(init.signal.reason ?? new DOMException('aborted', 'AbortError')), { once: true })
-  })
-}
-
-// totalBytes만큼 조금씩 흘려보내는 본문. pulled()로 실제로 읽힌 양을 본다. stallAfter면 그만큼 보낸 뒤 멈춘다
-export function streamedBody(totalBytes, { chunkBytes = 64 * 1024, stallAfter = null } = {}) {
+// totalBytes만큼 조금씩 흘려보내는 본문. pulled()로 실제로 읽힌 양을 본다. stallAfter면 그만큼 보낸 뒤 멈추고,
+// 멈춘 순간 onStall을 한 번 부른다(테스트가 그때 타임아웃 신호를 끊어 실제 타이머 없이 "본문이 멈춤"을 재현)
+export function streamedBody(totalBytes, { chunkBytes = 64 * 1024, stallAfter = null, onStall = () => {} } = {}) {
+  let stalled = false
   let sent = 0
   const stream = new ReadableStream({
     pull(controller) {
       if (stallAfter !== null && sent >= stallAfter) {
+        if (!stalled) {
+          stalled = true
+          onStall()
+        }
         return new Promise(() => {})
       }
       if (sent >= totalBytes) {
