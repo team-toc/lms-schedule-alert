@@ -4,16 +4,42 @@
   "version": "0.1.0",
   "type": "module",
   "main": "src/index.js",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "dev": "nodemon src/index.js",
-    "start": "node src/index.js"
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "migrate": "node scripts/migrate.js up",
+    "migrate:down": "node scripts/migrate.js down",
+    "migrate:status": "node scripts/migrate.js status",
+    "test": "TZ=UTC node --test --test-concurrency=1 --test-timeout=30000 --test-force-exit \"test/**/*.test.js\"",
+    "test:db:reset": "node scripts/reset-test-db.js",
+    "lint": "eslint ."
   },
   "dependencies": {
-    "cors": "^2.8.5",
+    "argon2": "^0.45.2",
     "dotenv": "^16.5.0",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "express-mysql-session": "^3.0.3",
+    "express-session": "^1.19.0",
+    "mysql2": "^3.24.6",
+    "node-ical": "0.27.3",
+    "pino": "^10.4.0",
+    "pino-http": "^11.0.0",
+    "umzug": "^3.8.3"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "eslint": "^9.39.5",
+    "supertest": "^7.3.1"
+  },
+  "overrides": {
+    "express-mysql-session": {
+      "mysql2": "$mysql2"
+    },
+    "rrule-temporal": "2.2.8",
+    "temporal-polyfill": "1.0.6",
+    "temporal-spec": "1.0.1",
+    "temporal-utils": "1.0.3"
   }
 }

@@ -1,0 +1,160 @@
+import { describe, it, before, beforeEach, after } from 'node:test'
+import assert from 'node:assert/strict'
+import request from 'supertest'
+import { openTestContext } from './helpers/test-context.js'
+import { createFakeKakaoClient } from './helpers/fake-kakao-client.js'
+import { signup, emailLogin, createFakeClock, createCountingHasher, VALID_EMAIL, VALID_PASSWORD, MINUTE_MS } from './helpers/email-flow.js'
+import { createLoginThrottle } from '../src/auth/login-throttle.js'
+import { createPasswordHasher } from '../src/email/password-hasher.js'
+
+const MAX_FAILURES = 5
+const LOCK_MINUTES = 15
+const LOCK_MS = LOCK_MINUTES * MINUTE_MS
+const WRONG = { email: VALID_EMAIL, password: 'wrong password!' }
+const RIGHT = { email: VALID_EMAIL, password: VALID_PASSWORD }
+
+describe('7. 이메일 로그인 실패 횟수 제한', () => {
+  let ctx
+  let clock
+
+  function buildApp({ trustProxy = false, passwordHasher } = {}) {
+    const loginThrottle = createLoginThrottle({
+      maxFailures: MAX_FAILURES,
+      lockMs: LOCK_MS,
+      maxEntries: 1000,
+      now: clock.now,
+      logger: ctx.silentLogger,
+    })
+    return ctx.buildApp(createFakeKakaoClient(), { loginThrottle, passwordHasher, config: { ...ctx.config, trustProxy } })
+  }
+
+  async function failFrom(app, times, { body = WRONG, forwardedFor } = {}) {
+    for (let i = 0; i < times; i += 1) {
+      const req = emailLogin(request(app), body)
+      await (forwardedFor ? req.set('X-Forwarded-For', forwardedFor) : req).expect(401)
+    }
+  }
+
+  before(async () => {
+    ctx = await openTestContext()
+  })
+  beforeEach(async () => {
+    await ctx.resetDatabase()
+    clock = createFakeClock()
+  })
+  after(async () => {
+    await ctx.close()
+  })
+
+  it('5번 실패 → 429 too_many_attempts + Retry-After(900초), 맞는 비밀번호도 잠긴 동안 429', async () => {
+    const app = buildApp()
+    await signup(request(app), RIGHT).expect(201)
+    await failFrom(app, MAX_FAILURES)
+
+    const locked = await emailLogin(request(app), WRONG).expect(429)
+    const lockedRight = await emailLogin(request(app), RIGHT).expect(429)
+
+    assert.equal(locked.body.error, 'too_many_attempts')
+    assert.equal(locked.headers['retry-after'], String(LOCK_MINUTES * 60))
+    assert.equal(lockedRight.body.error, 'too_many_attempts', '잠긴 동안은 비밀번호가 맞는지도 알려 주지 않음')
+  })
+
+  it('a) 잠긴 상태에서 맞는 비밀번호로 로그인해도 429, b) 잠긴 동안 해시 비교(verify)는 0번', async () => {
+    const hasher = createCountingHasher(createPasswordHasher())
+    const app = buildApp({ passwordHasher: hasher })
+    await signup(request(app), RIGHT).expect(201)
+    await failFrom(app, MAX_FAILURES)
+    const verifiesBeforeLock = hasher.calls.verify
+    assert.equal(verifiesBeforeLock, MAX_FAILURES, '잠기기 전 실패는 매번 비교함')
+
+    await emailLogin(request(app), RIGHT).expect(429)
+    await emailLogin(request(app), WRONG).expect(429)
+    await emailLogin(request(app), { email: 'nobody@example.com', password: 'x' }).expect(401)
+
+    assert.equal(hasher.calls.verify - verifiesBeforeLock, 1, '잠긴 두 요청은 비교 0번, 잠기지 않은 다른 이메일만 1번')
+  })
+
+  it('Retry-After는 주입한 시계 기준 남은 시간, 잠금 시간이 지나면 다시 로그인 가능', async () => {
+    const app = buildApp()
+    await signup(request(app), RIGHT).expect(201)
+    await failFrom(app, MAX_FAILURES)
+
+    clock.advance(LOCK_MS - MINUTE_MS)
+    const almost = await emailLogin(request(app), RIGHT).expect(429)
+    assert.equal(almost.headers['retry-after'], '60')
+
+    clock.advance(MINUTE_MS)
+    await emailLogin(request(app), RIGHT).expect(200)
+  })
+
+  it('로그인 성공 시 실패 횟수 초기화: 4번 실패 → 성공 → 4번 실패해도 잠기지 않음', async () => {
+    const app = buildApp()
+    await signup(request(app), RIGHT).expect(201)
+    await failFrom(app, MAX_FAILURES - 1)
+    await emailLogin(request(app), RIGHT).expect(200)
+
+    await failFrom(app, MAX_FAILURES - 1)
+
+    await emailLogin(request(app), RIGHT).expect(200)
+  })
+
+  it('c) 없는 이메일로 실패해도 횟수에 포함 → 같은 429 (존재 여부가 드러나지 않음)', async () => {
+    const app = buildApp()
+    const nobody = { email: 'nobody@example.com', password: 'whatever pw' }
+    await failFrom(app, MAX_FAILURES, { body: nobody })
+
+    const res = await emailLogin(request(app), nobody).expect(429)
+
+    assert.equal(res.body.error, 'too_many_attempts')
+  })
+
+  it('a) 프록시 신뢰가 켜지면 X-Forwarded-For가 다른 두 IP는 서로 다른 카운터 (3번씩 실패해도 안 잠김)', async () => {
+    const app = buildApp({ trustProxy: true })
+    await signup(request(app), RIGHT).expect(201)
+
+    await failFrom(app, 3, { forwardedFor: '203.0.113.1' })
+    await failFrom(app, 3, { forwardedFor: '198.51.100.7' })
+
+    await emailLogin(request(app), WRONG).set('X-Forwarded-For', '203.0.113.1').expect(401)
+    await emailLogin(request(app), WRONG).set('X-Forwarded-For', '198.51.100.7').expect(401)
+  })
+
+  it('b) 같은 이메일이라도 IP가 다르면 한쪽 잠금이 다른 쪽에 영향 없음', async () => {
+    const app = buildApp({ trustProxy: true })
+    await signup(request(app), RIGHT).expect(201)
+    await failFrom(app, MAX_FAILURES, { forwardedFor: '203.0.113.1' })
+
+    await emailLogin(request(app), RIGHT).set('X-Forwarded-For', '203.0.113.1').expect(429)
+
+    await emailLogin(request(app), RIGHT).set('X-Forwarded-For', '198.51.100.7').expect(200)
+  })
+
+  it('프록시 신뢰가 꺼져 있으면 X-Forwarded-For를 믿지 않는다 (헤더를 바꿔도 같은 카운터)', async () => {
+    const app = buildApp({ trustProxy: false })
+    await signup(request(app), RIGHT).expect(201)
+    for (let i = 0; i < MAX_FAILURES; i += 1) {
+      await emailLogin(request(app), WRONG).set('X-Forwarded-For', `203.0.113.${i + 1}`).expect(401)
+    }
+
+    await emailLogin(request(app), RIGHT).set('X-Forwarded-For', '198.51.100.7').expect(429)
+  })
+
+  it('제한기를 주입하지 않으면 설정값(LOGIN_MAX_FAILURES · LOGIN_LOCK_MINUTES)으로 앱이 만든다', async () => {
+    const config = { ...ctx.config, loginThrottle: { maxFailures: 2, lockMs: MINUTE_MS } }
+    const app = ctx.buildApp(createFakeKakaoClient(), { config })
+    await signup(request(app), RIGHT).expect(201)
+    await failFrom(app, 2)
+
+    const res = await emailLogin(request(app), RIGHT).expect(429)
+
+    const retryAfter = Number(res.headers['retry-after'])
+    assert.ok(retryAfter > 0 && retryAfter <= 60, `잠금 시간은 설정한 1분 이내여야 함: ${retryAfter}`)
+  })
+
+  it('가입은 실패 횟수 제한 대상이 아니다', async () => {
+    const app = buildApp()
+    await failFrom(app, MAX_FAILURES)
+
+    await signup(request(app), RIGHT).expect(201)
+  })
+})
