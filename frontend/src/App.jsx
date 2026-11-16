@@ -23,6 +23,7 @@ function App() {
   const [sessionCheckCount, setSessionCheckCount] = useState(0)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [logoutError, setLogoutError] = useState('')
+  const [homeRefreshKey, setHomeRefreshKey] = useState(0)
 
   useEffect(() => {
     let ignore = false
@@ -127,7 +128,13 @@ function App() {
 
   return (
     <div className="app">
-      <Header />
+      <Header
+        onRefresh={
+          activeMenu === '홈'
+            ? () => setHomeRefreshKey((key) => key + 1)
+            : undefined
+        }
+      />
 
       <Navigation
         activeMenu={activeMenu}
@@ -136,16 +143,11 @@ function App() {
 
       <main className="content">
         {activeMenu === '홈' && (
-          <>
-            <h2>홈</h2>
-
-            <HomeDashboard />
-
-            <NotificationList
-              assignments={assignments}
-              onSelectAssignment={handleNotificationSelect}
-            />
-          </>
+          <HomeDashboard
+            key={homeRefreshKey}
+            onOpenCalendar={() => handleMenuChange('캘린더')}
+            onOpenNotifications={() => handleMenuChange('알림')}
+          />
         )}
 
         {activeMenu === '알림' && (
@@ -160,22 +162,49 @@ function App() {
         {activeMenu === '캘린더' && <CalendarView />}
 
         {activeMenu === '설정' && (
-          <section className="panel">
-            <h2>설정</h2>
+          <div className="settings-view">
+            <div className="settings-header">
+              <h2 className="settings-title">설정</h2>
+              <p className="settings-desc">계정과 Canvas LMS 연동을 관리해요</p>
+            </div>
+
+            <section className="settings-section">
+              <h3 className="settings-section-title">계정</h3>
+              <div className="settings-card settings-account">
+                <span className="settings-avatar" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="8.5" r="3.5" />
+                    <path d="M5 19.5a7 7 0 0 1 14 0" />
+                  </svg>
+                </span>
+                <span className="settings-account-body">
+                  <strong className="settings-account-name">
+                    {user?.displayName || '이름 정보 없음'}
+                  </strong>
+                  <span className="settings-account-status">로그인되어 있어요</span>
+                </span>
+              </div>
+            </section>
+
             <CanvasSettings />
 
-            <h3>계정</h3>
-            <p>{user?.displayName}님으로 로그인되어 있습니다.</p>
-            {logoutError && <p>{logoutError}</p>}
-            <button
-              type="button"
-              className="login-button"
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-            >
-              {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
-            </button>
-          </section>
+            <section className="settings-section">
+              <h3 className="settings-section-title">계정 관리</h3>
+              <div className="settings-card settings-logout">
+                {logoutError && (
+                  <p role="alert" className="settings-error">{logoutError}</p>
+                )}
+                <button
+                  type="button"
+                  className="settings-logout-button"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                >
+                  {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
+                </button>
+              </div>
+            </section>
+          </div>
         )}
       </main>
     </div>

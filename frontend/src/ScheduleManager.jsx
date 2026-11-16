@@ -102,56 +102,89 @@ export default function ScheduleManager({ date, events, onChanged }) {
   }
 
   return (
-    <div style={{ marginTop: 24 }}>
-      <h3>개인 일정 관리</h3>
+    <section className="schedule-manager">
+      <h3 className="sm-title">개인 일정 관리</h3>
 
-      <form onSubmit={save} style={{ display: 'grid', gap: 10, maxWidth: 450 }}>
-        <label>
-          일정 제목
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="일정 제목"
-            maxLength={255}
-            required
-            style={{ display: 'block', width: '100%', padding: 8 }}
-          />
-        </label>
-
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <label>
-            시작
-            <input type="time" value={start} onChange={(e) => setStart(e.target.value)} />
+      <div className="sm-card">
+        <form onSubmit={save} className="sm-form">
+          <label className="sm-field">
+            <span className="sm-label">일정 제목</span>
+            <input
+              className="sm-input"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="일정 제목"
+              maxLength={255}
+              required
+            />
           </label>
-          <label>
-            종료
-            <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} />
-          </label>
-        </div>
 
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button type="submit" disabled={busy}>
-            {editingId !== null ? '수정 저장' : '일정 추가'}
-          </button>
-          {editingId !== null && (
-            <button type="button" onClick={reset}>취소</button>
-          )}
-        </div>
-      </form>
+          <div className="sm-time-row">
+            <label className="sm-field">
+              <span className="sm-label">시작</span>
+              <input
+                className="sm-input"
+                type="time"
+                value={start}
+                onChange={(e) => setStart(e.target.value)}
+              />
+            </label>
+            <label className="sm-field">
+              <span className="sm-label">종료</span>
+              <input
+                className="sm-input"
+                type="time"
+                value={end}
+                onChange={(e) => setEnd(e.target.value)}
+              />
+            </label>
+          </div>
 
-      {error && <p role="alert" style={{ color: '#dc2626' }}>{error}</p>}
+          <div className="sm-actions">
+            <button type="submit" className="sm-button is-primary" disabled={busy}>
+              {editingId !== null ? '수정 저장' : '일정 추가'}
+            </button>
+            {editingId !== null && (
+              <button type="button" className="sm-button" onClick={reset}>취소</button>
+            )}
+          </div>
+        </form>
 
-      {schedules.map((schedule) => (
-        <div key={schedule.id} style={{ padding: '12px 0', borderBottom: '1px solid #ddd' }}>
-          <strong>{schedule.title}</strong>
-          <p>
-            {timeInSeoul(schedule.startAt)} ~ {timeInSeoul(schedule.endAt)}
-          </p>
-          <button type="button" onClick={() => edit(schedule)} disabled={busy}>수정</button>
-          {' '}
-          <button type="button" onClick={() => remove(schedule.id)} disabled={busy}>삭제</button>
-        </div>
-      ))}
-    </div>
+        {error && <p role="alert" className="sm-error">{error}</p>}
+
+        {schedules.length > 0 && (
+          <ul className="sm-list">
+            {schedules.map((schedule) => (
+              <li key={schedule.id} className="sm-item">
+                <span className="sm-item-body">
+                  <strong className="sm-item-title">{schedule.title}</strong>
+                  <span className="sm-item-time">
+                    {timeInSeoul(schedule.startAt)} ~ {timeInSeoul(schedule.endAt)}
+                  </span>
+                </span>
+                <span className="sm-item-actions">
+                  <button
+                    type="button"
+                    className="sm-button is-small"
+                    onClick={() => edit(schedule)}
+                    disabled={busy}
+                  >
+                    수정
+                  </button>
+                  <button
+                    type="button"
+                    className="sm-button is-small is-danger"
+                    onClick={() => remove(schedule.id)}
+                    disabled={busy}
+                  >
+                    삭제
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
   )
 }

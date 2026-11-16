@@ -1,5 +1,6 @@
 import ScheduleManager from './ScheduleManager'
 import { useEffect, useState } from 'react'
+import './CalendarView.css'
 
 const seoulDate = (value) =>
   new Intl.DateTimeFormat('sv-SE', {
@@ -8,6 +9,42 @@ const seoulDate = (value) =>
     month: '2-digit',
     day: '2-digit',
   }).format(new Date(value))
+
+const timeInSeoul = (value) =>
+  new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Seoul',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(value))
+
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
+
+// 응답의 source 값으로 확인 가능한 구분만 사용: assignment(과제 마감), app(개인 일정)
+// 그 외 source가 오면 '기타'로 표시 (수업·변경됨은 구분할 데이터가 없어 사용하지 않음)
+const CATEGORY_ORDER = ['due', 'mine', 'other']
+const CATEGORY_LABELS = { due: '마감', mine: '내 일정', other: '기타' }
+
+function categoryOf(event) {
+  if (event.source === 'assignment') return 'due'
+  if (event.source === 'app') return 'mine'
+  return 'other'
+}
+
+const eventTime = (event) => event.dueAt ?? event.startAt
+
+function describeEvent(event) {
+  const label =
+    event.courseName ??
+    event.course ??
+    (event.source === 'assignment' ? '과제' : '개인 일정')
+
+  if (event.source === 'assignment') return `${label} · 마감`
+  if (event.source === 'app' && event.startAt && event.endAt) {
+    return `${label} · ${timeInSeoul(event.startAt)} ~ ${timeInSeoul(event.endAt)}`
+  }
+  return label
+}
 
 export default function CalendarView() {
   const [month, setMonth] = useState(() => new Date())
@@ -64,77 +101,150 @@ export default function CalendarView() {
     setSelectedDay(1)
   }
 
+  const goToday = () => {
+    const now = new Date()
+    setMonth(new Date(now.getFullYear(), now.getMonth(), 1))
+    setSelectedDay(now.getDate())
+  }
+
+  const selectedEvents = eventsForDay(selectedDay).sort(
+    (a, b) => new Date(eventTime(a)) - new Date(eventTime(b))
+  )
+  const selectedWeekday = WEEKDAYS[new Date(year, monthIndex, selectedDay).getDay()]
+  const legend = events.some((event) => categoryOf(event) === 'other')
+    ? CATEGORY_ORDER
+    : ['due', 'mine']
+
   return (
-    <section className="panel">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-        <button type="button" onClick={() => changeMonth(-1)}>이전 달</button>
-        <h2>{year}년 {monthIndex + 1}월</h2>
-        <button type="button" onClick={() => changeMonth(1)}>다음 달</button>
+    <div className="calendar-view">
+      <div className="cal-header">
+        <div className="cal-heading">
+          <h2 className="cal-title">{monthIndex + 1}월</h2>
+          <p className="cal-subtitle">{year}년</p>
+        </div>
+
+        <div className="cal-nav">
+          <button
+            type="button"
+            className="cal-nav-arrow"
+            onClick={() => changeMonth(-1)}
+            aria-label="이전 달"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+          </button>
+          <button type="button" className="cal-nav-today" onClick={goToday}>
+            오늘
+          </button>
+          <button
+            type="button"
+            className="cal-nav-arrow"
+            onClick={() => changeMonth(1)}
+            aria-label="다음 달"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
       </div>
 
-      {loading && <p>일정을 불러오는 중...</p>}
-      {error && <p role="alert">{error}</p>}
+      {error && <p className="cal-status" role="alert">{error}</p>}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 5 }}>
-        {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
-          <div key={day} style={{ textAlign: 'center', fontWeight: 700 }}>{day}</div>
-        ))}
-
-        {Array.from({ length: offset }, (_, index) => (
-          <div key={`empty-${index}`} />
-        ))}
-
-        {Array.from({ length: days }, (_, index) => {
-          const day = index + 1
-          const count = eventsForDay(day).length
-
-          return (
-            <button
-              type="button"
+      <div className="cal-card">
+        <div className="cal-grid">
+          {WEEKDAYS.map((day, index) => (
+            <div
               key={day}
-              onClick={() => setSelectedDay(day)}
-              style={{
-                minHeight: 65,
-                padding: 5,
-                border: day === selectedDay ? '2px solid #2563eb' : '1px solid #ddd',
-                borderRadius: 7,
-                background: day === selectedDay ? '#eff6ff' : '#fff',
-                color: '#111827',
-                textAlign: 'left',
-                cursor: 'pointer',
-              }}
+              className={`cal-weekday${index === 0 ? ' is-sun' : ''}${index === 6 ? ' is-sat' : ''}`}
             >
-              <strong>{day}</strong>
-              {count > 0 && (
-                <div style={{ fontSize: 11, color: '#2563eb', overflowWrap: 'anywhere' }}>
-                  일정 {count}개
-                </div>
-              )}
-            </button>
-          )
-        })}
+              {day}
+            </div>
+          ))}
+
+          {Array.from({ length: offset }, (_, index) => (
+            <div key={`empty-${index}`} />
+          ))}
+
+          {Array.from({ length: days }, (_, index) => {
+            const day = index + 1
+            const dayEvents = eventsForDay(day)
+            const categories = CATEGORY_ORDER.filter((category) =>
+              dayEvents.some((event) => categoryOf(event) === category)
+            )
+            const column = (offset + index) % 7
+            const classNames = ['cal-day']
+            if (column === 0) classNames.push('is-sun')
+            if (column === 6) classNames.push('is-sat')
+            if (day === selectedDay) classNames.push('is-selected')
+
+            return (
+              <button
+                type="button"
+                key={day}
+                className={classNames.join(' ')}
+                onClick={() => setSelectedDay(day)}
+                aria-pressed={day === selectedDay}
+                aria-label={`${monthIndex + 1}월 ${day}일${dayEvents.length ? `, 일정 ${dayEvents.length}개` : ''}`}
+              >
+                <span className="cal-day-num">{day}</span>
+                <span className="cal-day-dots" aria-hidden="true">
+                  {categories.map((category) => (
+                    <i key={category} className={`cal-dot is-${category}`} />
+                  ))}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="cal-legend">
+          {legend.map((category) => (
+            <span key={category} className="cal-legend-item">
+              <i className={`cal-dot is-${category}`} />
+              {CATEGORY_LABELS[category]}
+            </span>
+          ))}
+        </div>
       </div>
 
-      <h3>{monthIndex + 1}월 {selectedDay}일 일정</h3>
+      <section className="cal-section">
+        <div className="cal-section-head">
+          <h2 className="cal-section-title">
+            {monthIndex + 1}월 {selectedDay}일 {selectedWeekday}요일{' '}
+            <span className="cal-section-count">{selectedEvents.length}</span>
+          </h2>
+        </div>
+
+        <div className="cal-list-card">
+          {loading ? (
+            <p className="cal-empty">일정을 불러오는 중...</p>
+          ) : selectedEvents.length === 0 ? (
+            <p className="cal-empty">등록된 일정이 없습니다.</p>
+          ) : (
+            <ul className="cal-list">
+              {selectedEvents.map((event) => (
+                <li className="cal-item" key={`${event.source}-${event.id}`}>
+                  <span className="cal-item-time">
+                    {timeInSeoul(eventTime(event))}
+                  </span>
+                  <span className="cal-item-body">
+                    <strong className="cal-item-title">{event.title}</strong>
+                    <span className="cal-item-sub">{describeEvent(event)}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+
       <ScheduleManager
         date={dateKey(selectedDay)}
         events={eventsForDay(selectedDay)}
         onChanged={() => setRefreshKey((value) => value + 1)}
       />
-
-      {eventsForDay(selectedDay).length === 0 ? (
-        <p>등록된 일정이 없습니다.</p>
-      ) : (
-        <ul>
-          {eventsForDay(selectedDay).map((event) => (
-            <li key={`${event.source}-${event.id}`} style={{ marginBottom: 12 }}>
-              <strong>{event.title}</strong>
-              <div>{event.courseName ?? event.course ?? (event.source === 'assignment' ? '과제' : '개인 일정')}</div>
-              <small>{new Date(event.dueAt ?? event.startAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</small>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+    </div>
   )
 }

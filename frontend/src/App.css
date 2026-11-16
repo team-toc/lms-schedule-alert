@@ -242,3 +242,184 @@
   outline: 2px solid #4d67eb;
   outline-offset: 2px;
 }
+/* ===== 공통 헤더 (Header.jsx: .app-header) ===== */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 14px 10px 20px;
+  background: #f3f4f7;
+}
+
+.app-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.app-header-logo {
+  flex: none;
+  display: block;
+  width: auto;
+  height: 22px;
+}
+
+.app-header-title {
+  margin: 0;
+  color: #191d26;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+}
+
+.app-header-title span {
+  color: #4b65e7;
+}
+
+.app-header-actions {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+
+.app-header-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #2a2f3a;
+  cursor: pointer;
+}
+
+.app-header-icon svg {
+  width: 23px;
+  height: 23px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.app-header-icon:hover:not(:disabled) {
+  background: rgba(25, 29, 38, 0.05);
+}
+
+.app-header-icon:disabled {
+  color: #b9bec8;
+  cursor: not-allowed;
+}
+
+.app-header-icon:focus-visible {
+  outline: 2px solid #4d67eb;
+  outline-offset: 2px;
+}
+
+/* ===== 하단 플로팅 내비게이션 (Navigation.jsx: .app-nav) ===== */
+.app-nav {
+  position: fixed;
+  z-index: 20;
+  left: 50%;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 2px;
+  width: min(calc(100% - 28px), 362px);
+  padding: 5px;
+  background: rgba(250, 250, 251, 0.9);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 33px;
+  box-shadow:
+    0 10px 30px rgba(28, 34, 48, 0.14),
+    0 1px 3px rgba(28, 34, 48, 0.06);
+}
+
+.app-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 53px;
+  padding: 6px 2px 5px;
+  border: 0;
+  border-radius: 27px;
+  background: transparent;
+  color: #646b78;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.app-nav-item svg {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.app-nav-item span {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.app-nav-item.active {
+  background: #fff;
+  color: #1b1f28;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(28, 34, 48, 0.1);
+}
+
+.app-nav-item.active svg {
+  stroke-width: 2.1;
+}
+
+.app-nav-item:not(.active):hover {
+  color: #2c3240;
+}
+
+.app-nav-item:focus-visible {
+  outline: 2px solid #4d67eb;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-nav-item {
+    transition: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .app-header {
+    padding-left: 16px;
+    padding-right: 10px;
+  }
+
+  .app-nav {
+    width: calc(100% - 16px);
+  }
+
+  .app-nav-item {
+    font-size: 10.5px;
+  }
+}

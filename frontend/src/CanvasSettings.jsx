@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import './CanvasSettings.css'
 
 async function request(path, options = {}) {
   const response = await fetch(path, {
@@ -15,6 +16,39 @@ async function request(path, options = {}) {
   }
 
   return data
+}
+
+// 서버의 status 값을 화면 문구로 변환 (알 수 없는 값은 성공으로 처리하지 않음)
+function describeStatus(status) {
+  if (status === null) {
+    return { label: '확인 중', tone: 'neutral', description: '연결 상태를 확인하고 있어요.' }
+  }
+
+  switch (status.status) {
+    case 'not_connected':
+      return {
+        label: '연결 안 됨',
+        tone: 'neutral',
+        description: 'Canvas 액세스 토큰을 등록하면 LMS 과제와 일정을 불러와요.',
+      }
+    case 'connected':
+    case 'ok':
+      return { label: '연결됨', tone: 'success', description: 'Canvas LMS와 연결되어 있어요.' }
+    case 'syncing':
+      return { label: '동기화 중', tone: 'info', description: 'Canvas 데이터를 동기화하고 있어요.' }
+    case 'needs_reauth':
+      return {
+        label: '토큰 재등록 필요',
+        tone: 'warning',
+        description: '토큰을 다시 등록해야 해요. 새 토큰을 발급받아 갱신해 주세요.',
+      }
+    default:
+      return {
+        label: status.status ?? '확인 필요',
+        tone: 'neutral',
+        description: '연결 상태를 확인할 수 없어요.',
+      }
+  }
 }
 
 export default function CanvasSettings() {
@@ -87,72 +121,93 @@ export default function CanvasSettings() {
 
   const connected = status && status.status !== 'not_connected'
 
+  const statusInfo = describeStatus(status)
+
   return (
-    <div>
-      <h3>Canvas LMS 연동</h3>
-
-      <p>
-        연결 상태: <strong>
-          {status === null
-            ? '확인 중'
-            : status.status === 'not_connected'
-              ? '연결 안 됨'
-              : status.status === 'connected'
-                ? '연결됨'
-                : status.status === 'syncing'
-                  ? '동기화 중'
-                  : status.status === 'needs_reauth'
-                    ? '토큰 재등록 필요'
-                    : status.status ?? '확인 필요'}
-        </strong>
-      </p>
-
-      <button type="button" onClick={() => {
-        setError('')
-        refresh().catch((err) => setError(err.message))
-      }}>
-        연결 상태 새로고침
-      </button>
-
-      <div style={{ marginTop: 20, display: 'grid', gap: 10, maxWidth: 450 }}>
-        <label htmlFor="canvas-token">
-          Canvas 액세스 토큰
-        </label>
-
-        <input
-          id="canvas-token"
-          type="password"
-          value={token}
-          onChange={(event) => setToken(event.target.value)}
-          placeholder="발급받은 토큰 붙여넣기"
-          autoComplete="off"
-          maxLength={200}
-          style={{ padding: 10, width: '100%', boxSizing: 'border-box' }}
-        />
-
-        <button type="button" disabled={busy}
-          onClick={() => perform('register')}>
-          {connected ? '토큰 갱신' : 'Canvas 연결'}
-        </button>
-
-        <button type="button" disabled={busy || !connected}
-          onClick={() => perform('sync')}>
-          지금 동기화
-        </button>
-
-        <button type="button" disabled={busy || !connected}
-          onClick={() => perform('delete')}>
-          연결 해제
+    <section className="canvas-settings">
+      <div className="cs-head">
+        <h3 className="cs-title">Canvas LMS 연동</h3>
+        <button
+          type="button"
+          className="cs-text-button"
+          onClick={() => {
+            setError('')
+            refresh().catch((err) => setError(err.message))
+          }}
+        >
+          연결 상태 새로고침
         </button>
       </div>
 
-      <p style={{ color: '#6b7280' }}>
-        인하공전 Canvas 토큰은 최대 7일간 유효합니다.
-        만료되면 새 토큰을 발급받아 갱신해 주세요.
-      </p>
+      <div className="cs-card">
+        <div className="cs-status">
+          <span className={`cs-badge is-${statusInfo.tone}`}>
+            <i aria-hidden="true" />
+            {statusInfo.label}
+          </span>
+          <p className="cs-status-desc">{statusInfo.description}</p>
+        </div>
 
-      {message && <p role="status">{message}</p>}
-      {error && <p role="alert" style={{ color: '#dc2626' }}>{error}</p>}
-    </div>
+        <div className="cs-form">
+          <label className="cs-label" htmlFor="canvas-token">
+            Canvas 액세스 토큰
+          </label>
+
+          <input
+            id="canvas-token"
+            className="cs-input"
+            type="password"
+            value={token}
+            onChange={(event) => setToken(event.target.value)}
+            placeholder="발급받은 토큰 붙여넣기"
+            autoComplete="off"
+            maxLength={200}
+          />
+
+          <button
+            type="button"
+            className="cs-button is-primary"
+            disabled={busy}
+            onClick={() => perform('register')}
+          >
+            {connected ? '토큰 갱신' : 'Canvas 연결'}
+          </button>
+
+          <div className="cs-actions">
+            <button
+              type="button"
+              className="cs-button"
+              disabled={busy || !connected}
+              onClick={() => perform('sync')}
+            >
+              지금 동기화
+            </button>
+
+            <button
+              type="button"
+              className="cs-button is-danger"
+              disabled={busy || !connected}
+              onClick={() => perform('delete')}
+            >
+              연결 해제
+            </button>
+          </div>
+
+          {message && <p role="status" className="cs-message">{message}</p>}
+          {error && <p role="alert" className="cs-error">{error}</p>}
+        </div>
+
+        <p className="cs-notice">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 11v5M12 8h.01" />
+          </svg>
+          <span>
+            인하공전 Canvas 토큰은 최대 7일간 유효합니다.
+            만료되면 새 토큰을 발급받아 갱신해 주세요.
+          </span>
+        </p>
+      </div>
+    </section>
   )
 }
