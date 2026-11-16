@@ -117,14 +117,22 @@ async function followRedirects(deps, start) {
   }
 }
 
-export function createIcloudClient({ fetchFn = globalThis.fetch, timeoutMs = REQUEST_TIMEOUT_MS, maxBytes = MAX_BYTES, maxRedirects = MAX_REDIRECTS } = {}) {
+// createTimeoutSignal: 타임아웃 신호를 만드는 함수(기본 AbortSignal.timeout). 테스트가 실제 타이머 없이 타임아웃을 일으키려고 바꿔 끼운다
+// (AbortSignal.timeout 타이머는 이벤트 루프를 붙잡지 않아, 그 타이머를 기다리는 테스트는 Node 22에서 먼저 끝나 버린다)
+export function createIcloudClient({
+  fetchFn = globalThis.fetch,
+  timeoutMs = REQUEST_TIMEOUT_MS,
+  maxBytes = MAX_BYTES,
+  maxRedirects = MAX_REDIRECTS,
+  createTimeoutSignal = (ms) => AbortSignal.timeout(ms),
+} = {}) {
   // url: 정규화한 https 주소(icloud-url.js). 결과: ICS 본문 문자열
   async function fetchCalendar(url) {
     const start = typeof url === 'string' ? allowedUrl(url) : null
     if (!start) {
       throw new IcloudFetchError(ICLOUD_ERRORS.urlNotAllowed)
     }
-    const signal = AbortSignal.timeout(timeoutMs)
+    const signal = createTimeoutSignal(timeoutMs)
     const deps = { fetchFn, signal, maxRedirects }
     const res = await followRedirects(deps, start)
     if (!res.ok) {

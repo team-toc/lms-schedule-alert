@@ -41,6 +41,32 @@ describe('iCloud 클라이언트', () => {
     assert.match(req.headers.get('accept') ?? '', /text\/calendar/)
   })
 
+  it('타임아웃 신호: 기본은 AbortSignal.timeout(timeoutMs) 하나를 모든 요청에, 바꿔 끼운 함수는 timeoutMs로 한 번 불린다', async () => {
+    const realTimeout = AbortSignal.timeout
+    const made = []
+    AbortSignal.timeout = (ms) => {
+      const signal = realTimeout.call(AbortSignal, ms)
+      made.push({ ms, signal })
+      return signal
+    }
+    try {
+      icloud.setRedirect(TOKEN, `/published/2/${TOKEN}next`)
+      icloud.setCalendar(`${TOKEN}next`, BODY)
+      assert.equal(await client.fetchCalendar(URL_A), BODY)
+    } finally {
+      AbortSignal.timeout = realTimeout
+    }
+    assert.deepEqual(made.map((m) => m.ms), [200], '기본값: AbortSignal.timeout(timeoutMs) 한 번')
+    assert.deepEqual(icloud.requests.map((r) => r.init.signal === made[0].signal), [true, true], '리다이렉트한 요청까지 같은 신호')
+
+    const controller = new AbortController()
+    const calls = []
+    const injected = createIcloudClient({ fetchFn: icloud.fetch, timeoutMs: 1234, createTimeoutSignal: (ms) => (calls.push(ms), controller.signal) })
+    await injected.fetchCalendar(URL_A)
+    assert.deepEqual(calls, [1234])
+    assert.equal(icloud.requests.at(-1).init.signal, controller.signal)
+  })
+
   it('Content-Type은 text/calendar만 (파라미터 · 대소문자 허용), 아니면 icloud_not_calendar', async () => {
     for (const contentType of ['text/calendar', 'TEXT/CALENDAR; charset=utf-8']) {
       icloud.intercept(() => true, () => icsResponse(BODY, { contentType }), { times: 1 })
