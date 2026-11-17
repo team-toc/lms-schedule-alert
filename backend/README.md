@@ -43,6 +43,10 @@ npm run dev
 | `KAKAO_REDIRECT_URI` | 카카오 콘솔에 등록한 Redirect URI (개발: `http://localhost:4000/api/auth/kakao/callback`) |
 | `NODE_ENV` | `production`이면 쿠키에 Secure |
 | `TRUST_PROXY` | nginx 뒤에서 실행할 때 `true` (개발 `false`, 운영 `true`) |
+| `CANVAS_BASE_URL` | 학교 Canvas 주소, 경로 없이 (운영은 https만). 서버 시작 때만 검사하고 마이그레이션에는 필요 없다 |
+| `CANVAS_TOKEN_KEY` | 비밀 암호화 키: Canvas 토큰 · iCloud 공개 링크 암호화와 링크 중복 확인 해시(이 키에서 파생)에 함께 쓴다. `openssl rand -base64 32` (32바이트 base64). **잃어버리면 저장된 Canvas 토큰 · iCloud 링크를 모두 복구할 수 없다**(사용자가 다시 등록해야 함) |
+| `LMS_SYNC_INTERVAL_MINUTES` | Canvas 주기 동기화 간격(분). 기본 30 |
+| `LMS_SYNC_CONCURRENCY` | 동시에 도는 Canvas 동기화 수(첫 · 주기 · 수동 합계). 1 ~ 3, 기본 2 (DB 풀 10개를 API와 나눠 씀) |
 
 ## 마이그레이션
 
@@ -110,8 +114,8 @@ npm test        # 전체 테스트
 npm run lint    # 코드 규칙 검사
 ```
 
-- 카카오 · Google API는 가짜 클라이언트로 바꿔 실제로 호출하지 않는다. 테스트마다 테스트 DB의 테이블을 비우고, 테이블은 테스트가 마이그레이션으로 만든다.
-- **`.env` 없이도 돈다.** 테스트는 환경에서 아래 DB 접속값만 읽고, 나머지 설정(세션 · 카카오 · Google 키, 프록시, 로그인 실패 제한 등)은 테스트 안에 고정돼 있다. `.env`가 있으면 거기 적힌 DB 접속값을 쓴다.
+- 카카오 · Google · Canvas API는 가짜로 바꿔 실제로 호출하지 않는다. 테스트마다 테스트 DB의 테이블을 비우고, 테이블은 테스트가 마이그레이션으로 만든다.
+- **`.env` 없이도 돈다.** 테스트는 환경에서 아래 DB 접속값만 읽고, 나머지 설정(세션 · 카카오 · Google 키, Canvas 주소 · 토큰 암호화 키, 프록시, 로그인 실패 제한 등)은 테스트 안에 고정돼 있다. `.env`가 있으면 거기 적힌 DB 접속값을 쓴다.
 
 ### 테스트 DB 준비
 

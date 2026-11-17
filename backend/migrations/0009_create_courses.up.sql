@@ -1,0 +1,10 @@
+-- Canvas 과목 (여러 사용자가 공유하는 행)
+CREATE TABLE courses (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  canvas_course_id BIGINT UNSIGNED NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_courses_canvas_course (canvas_course_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

@@ -13,7 +13,7 @@
     "migrate": "node scripts/migrate.js up",
     "migrate:down": "node scripts/migrate.js down",
     "migrate:status": "node scripts/migrate.js status",
-    "test": "node --test --test-concurrency=1 \"test/**/*.test.js\"",
+    "test": "TZ=UTC node --test --test-concurrency=1 --test-timeout=30000 --test-force-exit \"test/**/*.test.js\"",
     "test:db:reset": "node scripts/reset-test-db.js",
     "lint": "eslint ."
   },
@@ -24,6 +24,7 @@
     "express-mysql-session": "^3.0.3",
     "express-session": "^1.19.0",
     "mysql2": "^3.24.6",
+    "node-ical": "0.27.3",
     "pino": "^10.4.0",
     "pino-http": "^11.0.0",
     "umzug": "^3.8.3"
@@ -35,6 +36,10 @@
   "overrides": {
     "express-mysql-session": {
       "mysql2": "$mysql2"
-    }
+    },
+    "rrule-temporal": "2.2.8",
+    "temporal-polyfill": "1.0.6",
+    "temporal-spec": "1.0.1",
+    "temporal-utils": "1.0.3"
   }
 }
