@@ -1,0 +1,414 @@
+/* 홈 화면 전용 스타일: 모든 선택자를 .home-dashboard 하위로 제한
+   수치는 시안(390px 폭 기준)에서 측정한 값 */
+
+.home-dashboard {
+  --home-ink: #141820;
+  --home-text: #1a1b23;
+  --home-sub: #707886;
+  --home-faint: #99a0ac;
+  --home-line: #f1f3f5;
+  --home-blue: #4a62e1;
+  --home-red: #be3930;
+  --home-card-radius: 16px;
+
+  display: flex;
+  flex-direction: column;
+  /* .content(공통)의 위 12px·좌우 17px 여백을 홈에서만 시안 값(0 / 16px)에 맞춤 */
+  margin: -12px -1px 0;
+  min-width: 0;
+}
+
+.home-dashboard .home-status {
+  margin: 16px 4px;
+  color: var(--home-sub);
+  font-size: 14px;
+}
+
+/* ---------- 일정 변경 배너 ---------- */
+.home-dashboard .home-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  width: 100%;
+  min-height: 145px;
+  padding: 21px 27px 21px 22px;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--home-card-radius);
+  background-color: #fff;
+  background-image: repeating-radial-gradient(
+    circle at calc(100% - 89px) 80px,
+    transparent 0 26.8px,
+    #eef0f3 26.8px 27.8px
+  );
+  box-shadow: 0 1px 3px rgba(31, 38, 52, 0.03);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.home-dashboard .home-banner:disabled {
+  cursor: default;
+}
+
+.home-dashboard .home-banner:focus-visible {
+  outline: 2px solid var(--home-blue);
+  outline-offset: 2px;
+}
+
+.home-dashboard .home-banner-text {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.home-dashboard .home-banner-eyebrow {
+  color: var(--home-sub);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+}
+
+.home-dashboard .home-banner.has-change .home-banner-eyebrow {
+  color: var(--home-red);
+}
+
+.home-dashboard .home-banner-headline {
+  margin-top: 6px;
+  color: var(--home-ink);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 27px;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.home-dashboard .home-banner-detail {
+  margin-top: 7px;
+  color: var(--home-sub);
+  font-size: 13px;
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-dashboard .home-banner-detail s {
+  color: var(--home-faint);
+}
+
+.home-dashboard .home-banner-detail b {
+  color: var(--home-ink);
+  font-weight: 700;
+}
+
+/* 헤더와 같은 toc-clock-logo.png, 원본 비율 유지 */
+.home-dashboard .home-banner-art {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  display: block;
+  width: auto;
+  height: 76px;
+  transform: translateY(-7px);
+  filter: drop-shadow(0 10px 6px rgba(60, 30, 30, 0.12));
+}
+
+/* ---------- 섹션 공통 ---------- */
+.home-dashboard .home-section {
+  min-width: 0;
+}
+
+.home-dashboard .home-banner + .home-section {
+  margin-top: 18px;
+}
+
+.home-dashboard .home-section + .home-section {
+  margin-top: 31px;
+}
+
+.home-dashboard .home-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 24px;
+  margin: 0 12px 13px 4px;
+}
+
+.home-dashboard .home-section-title {
+  margin: 0;
+  color: var(--home-ink);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 24px;
+}
+
+.home-dashboard .home-section-count {
+  margin-left: 2px;
+  color: var(--home-faint);
+  font-weight: 700;
+}
+
+/* 레이아웃 높이는 24px, 터치 영역은 36px */
+.home-dashboard .home-section-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: -6px 0;
+  padding: 6px 2px 6px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--home-sub);
+  font: inherit;
+  font-size: 13px;
+  line-height: 24px;
+  cursor: pointer;
+}
+
+.home-dashboard .home-section-link:focus-visible {
+  outline: 2px solid var(--home-blue);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.home-dashboard .home-chevron {
+  width: 7px;
+  height: 7px;
+  border-top: 1.6px solid currentColor;
+  border-right: 1.6px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.home-dashboard .home-card {
+  overflow: hidden;
+  background: #fff;
+  border-radius: var(--home-card-radius);
+  box-shadow: 0 1px 3px rgba(31, 38, 52, 0.03);
+}
+
+.home-dashboard .home-empty {
+  margin: 0;
+  padding: 20px 18px;
+  color: var(--home-sub);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.home-dashboard ul,
+.home-dashboard ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-dashboard .home-item-title {
+  display: block;
+  overflow: hidden;
+  color: var(--home-text);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  line-height: 20px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.home-dashboard .home-item-sub {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--home-sub);
+  font-size: 13px;
+  line-height: 17px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ---------- 오늘 일정 ---------- */
+.home-dashboard .home-today-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 10.5px 18px;
+}
+
+.home-dashboard .home-today-item + .home-today-item {
+  border-top: 1px solid var(--home-line);
+}
+
+.home-dashboard .home-today-time {
+  flex: none;
+  width: 42px;
+  color: var(--home-blue);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.home-dashboard .home-today-body {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- 다가오는 마감: 주간 ---------- */
+.home-dashboard .home-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  padding: 20px 7.5px 0;
+}
+
+.home-dashboard .home-week-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.home-dashboard .home-week-label {
+  color: var(--home-sub);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.home-dashboard .home-week-num {
+  margin-top: 2px;
+  color: #505765;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 22px;
+  font-variant-numeric: tabular-nums;
+}
+
+.home-dashboard .home-week-day.is-sat .home-week-label {
+  color: var(--home-blue);
+}
+
+.home-dashboard .home-week-day.is-sun .home-week-label {
+  color: var(--home-red);
+}
+
+.home-dashboard .home-week-day.is-today .home-week-label {
+  color: var(--home-sub);
+}
+
+.home-dashboard .home-week-day.is-today .home-week-num {
+  color: var(--home-blue);
+  font-weight: 800;
+}
+
+.home-dashboard .home-week-dots {
+  display: flex;
+  gap: 3px;
+  height: 5px;
+}
+
+.home-dashboard .home-week-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--home-blue);
+}
+
+.home-dashboard .home-week-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 16px 11px;
+  border-bottom: 1px solid var(--home-line);
+  color: var(--home-sub);
+  font-size: 13px;
+  line-height: 16px;
+}
+
+/* ---------- 다가오는 마감: 목록 ---------- */
+.home-dashboard .home-due-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 61px;
+  padding: 10.5px 16px;
+}
+
+.home-dashboard .home-due-item + .home-due-item {
+  border-top: 1px solid var(--home-line);
+}
+
+.home-dashboard .home-due-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.home-dashboard .home-dday {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 51px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.home-dashboard .home-dday.is-urgent {
+  background: #f6eae9;
+  color: var(--home-red);
+}
+
+.home-dashboard .home-dday.is-soon {
+  background: #fcebdc;
+  color: #c4672a;
+}
+
+.home-dashboard .home-dday.is-normal {
+  background: #f0f1f3;
+  color: #4c5461;
+}
+
+/* ---------- 작은 화면 ---------- */
+@media (max-width: 360px) {
+  .home-dashboard .home-banner {
+    gap: 16px;
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+
+  .home-dashboard .home-banner-headline {
+    font-size: 18px;
+    line-height: 25px;
+  }
+
+  .home-dashboard .home-banner-art {
+    height: 64px;
+  }
+
+  .home-dashboard .home-today-item,
+  .home-dashboard .home-due-item {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .home-dashboard .home-week {
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+
+  .home-dashboard .home-dday {
+    min-width: 46px;
+  }
+}
