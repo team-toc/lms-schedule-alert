@@ -4,7 +4,7 @@
 // - keys.p256dh: base64url · 65바이트 · 0x04(P-256 비압축), keys.auth: base64url · 16바이트
 export const MAX_ENDPOINT_LENGTH = 2048
 
-// 브라우저가 고르는 푸시 서비스 호스트 (ADR 0012 표). Chrome은 공식 레퍼런스 미확인("확인 필요")
+// 브라우저가 고르는 푸시 서비스 호스트 (ADR 0012 표). Chrome(fcm.googleapis.com)은 2026-11-18 실제 구독으로 확인
 const PUSH_SERVICE_SUFFIXES = ['fcm.googleapis.com', 'push.apple.com', 'push.services.mozilla.com', 'notify.windows.com']
 const BASE64URL = /^[A-Za-z0-9_-]+$/
 const P256DH_BYTES = 65

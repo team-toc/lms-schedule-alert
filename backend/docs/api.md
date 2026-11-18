@@ -1047,4 +1047,4 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 2. **로그인 성공 후 이동 경로**: 지금은 항상 `FRONTEND_URL` 루트. `onboardingStep`에 따라 백엔드가 바로 토큰 입력 화면(예: `/onboarding/lms-token`)으로 보낼지, 프론트가 `/me`를 보고 분기할지.
 3. **이미 로그아웃된 상태에서 로그아웃**: 지금은 401 `already_logged_out`. 결과가 같으니(로그아웃 상태) 204로 바꿀지.
 4. **푸시 알림을 눌렀을 때 열 화면 URL**: 지금 payload의 `url`은 임시 `/?view=notifications`(프론트는 URL 경로 없이 화면 상태로 전환). 경로 이름과, 알림 하나를 바로 열지(`notificationId`) 목록만 열지([docs/push.md](push.md) 10절).
-5. **Chrome 구독 주소의 호스트(확인 필요)**: 백엔드는 `fcm.googleapis.com`을 허용. 실제 Chrome 구독의 `endpoint` 호스트를 한 번 확인해 알려 주면 확정한다.
+5. **Chrome 구독 주소의 호스트**: `fcm.googleapis.com`으로 확정(2026-11-18 실제 Chrome 구독으로 확인). 다른 Chromium 계열 브라우저(Opera · Samsung Internet 등)는 아직 실제 구독으로 확인하지 않았다.

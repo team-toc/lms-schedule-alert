@@ -280,6 +280,6 @@ async function logoutWithPush() {
 ## 10. 열린 질문 · 확인 필요
 
 - **알림 화면 URL** (프론트 담당과 정할 것): 지금 프론트는 URL 경로 없이 화면 상태로 바뀐다. payload의 `url`은 **임시로 `/?view=notifications`**. 정할 것: 경로 이름(예: `/notifications`), 알림 하나를 바로 열지(`notificationId` 사용) 목록만 열지. 정해지면 백엔드 한 곳(`src/push/push-payload.js`)을 바꾼다
-- **Chrome 구독 주소의 호스트**: 백엔드는 `fcm.googleapis.com`을 허용한다. 공식 레퍼런스에서 호스트 명시를 찾지 못해 **확인 필요** — 실제 Chrome 구독을 하나 만들어 `subscription.endpoint`의 호스트를 확인해 알려 주면 확정한다(다르면 400 `push_service_not_allowed`가 난다)
+- **Chrome 구독 주소의 호스트**: `fcm.googleapis.com`으로 **확정**(2026-11-18 실제 Chrome 구독으로 확인, 허용 목록 그대로). Opera · Samsung Internet 같은 다른 Chromium 계열은 실제 구독으로 **확인 필요**(목록 밖이면 400 `push_service_not_allowed` — 그 브라우저의 `endpoint` 호스트를 알려 주면 추가한다)
 - **확인 필요**: `renotify`(덮어쓸 때 다시 알림음) · `pushsubscriptionchange`를 브라우저(특히 Safari)가 어떻게 처리하는지 — 3절의 "앱을 열 때마다 다시 등록"이 있으므로 기능이 없어도 알림은 계속 온다
 - **확인 필요**: iPhone 웹앱의 `display` 값 · 아이콘 요구 사항(5절), 실기기 확인 전
