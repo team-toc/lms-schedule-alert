@@ -1,6 +1,6 @@
 # ERD (백엔드 DB)
 
-현재 마이그레이션(`migrations/0001` ~ `0022`) 기준으로 **실제로 있는 테이블만** 그린다. 마이그레이션을 추가하면 같은 커밋에서 이 문서도 고친다.
+현재 마이그레이션(`migrations/0001` ~ `0023`) 기준으로 **실제로 있는 테이블만** 그린다. 마이그레이션을 추가하면 같은 커밋에서 이 문서도 고친다.
 
 - 문자셋 utf8mb4, 시간 칼럼은 UTC로 저장 (`DATETIME(3)`, 밀리초까지)
 - 마이그레이션 실행 기록 `schema_migrations`는 도구의 장부라 그리지 않는다
@@ -28,6 +28,7 @@ erDiagram
     announcements ||--o{ announcement_scans : "훑은 공지"
     lms_tokens ||--o{ suggestions : "일정 제안 (ON DELETE CASCADE)"
     announcements ||--o{ suggestions : "제안을 뽑은 공지"
+    users ||--o{ push_subscriptions : "브라우저 푸시 구독, 최대 10개 (ON DELETE CASCADE)"
     schedules |o--o{ suggestions : "수락해서 만든 앱 일정 (ON DELETE SET NULL)"
 
     users {
@@ -192,6 +193,18 @@ erDiagram
         datetime(3) decided_at "NULL, 수락 · 거절 시각"
     }
 
+    push_subscriptions {
+        bigint_unsigned id PK "AUTO_INCREMENT"
+        bigint_unsigned user_id FK "NOT NULL → users.id (endpoint 주인, 다른 계정이 같은 브라우저로 등록하면 바뀜)"
+        char(64) endpoint_hash UK "NOT NULL, ascii, endpoint의 HMAC-SHA256 hex (endpoint당 한 행, 사용자와 상관없이)"
+        varchar(4096) subscription_enc "NOT NULL, ascii, endpoint · p256dh · auth JSON 암호문 'v1:' + base64 (AES-256-GCM, 원문 저장 안 함)"
+        datetime(3) created_at "NOT NULL, 기본 현재 시각"
+        datetime(3) updated_at "NOT NULL, 행이 바뀌면 자동 갱신"
+        datetime(3) last_success_at "NULL, 마지막 발송 성공 시각"
+        int_unsigned consecutive_failures "NOT NULL, 기본 0, 연속 실패 횟수 (성공하면 0)"
+        varchar(32) last_failure_code "NULL, 마지막 실패 결과 코드 (상태 숫자 · timeout 등)"
+    }
+
     sessions {
         varchar(128) session_id PK "utf8mb4_bin"
         int_unsigned expires "NOT NULL, 만료 시각(유닉스 초), 인덱스"
@@ -272,6 +285,11 @@ erDiagram
 | suggestions | `fk_suggestions_token_user` | FK | `user_id` → `lms_tokens.user_id`, ON DELETE CASCADE |
 | suggestions | `fk_suggestions_announcement` | FK | `announcement_id` → `announcements.id` (CASCADE 아님) |
 | suggestions | `fk_suggestions_schedule` | FK | `schedule_id` → `schedules.id`, ON DELETE SET NULL (일정이 지워져도 제안은 남음) |
+| push_subscriptions | PRIMARY | PK | `id` |
+| push_subscriptions | `uq_push_subscriptions_endpoint` | UNIQUE | `endpoint_hash` (endpoint당 한 행: 같은 브라우저 재등록은 갱신, 다른 계정이면 주인 이전) |
+| push_subscriptions | `idx_push_subscriptions_user` | 인덱스 (복합) | `user_id`, `id` (내 구독 목록 · 발송 대상) |
+| push_subscriptions | `chk_push_subscriptions_endpoint_hash` | CHECK | `endpoint_hash`는 소문자 hex 64자 |
+| push_subscriptions | `fk_push_subscriptions_user` | FK | `user_id` → `users.id`, ON DELETE CASCADE (계정 삭제 때 지워짐, Canvas 연동 해제와는 무관) |
 | sessions | PRIMARY | PK | `session_id` |
 | sessions | `idx_sessions_expires` | 인덱스 | `expires` (만료 세션 정리용) |
 
@@ -325,4 +343,13 @@ erDiagram
 - 두 표의 `user_id`는 `lms_tokens(user_id)`(UNIQUE)를 가리킨다: **연동 해제 · 사용자 삭제 때 같은 DELETE 안에서 함께 지워지고**, 수락해서 만든 앱 일정은 남는다. 토큰 교체 · 재등록은 `INSERT … ON DUPLICATE KEY UPDATE`(행 UPDATE)라 제안이 남는다.
 - 공지 본문은 저장하지 않는다(맥락 60자만).
 - 되돌리기 보호: 0021 ~ 0022의 down은 행이 있으면 실패하고 지우지 않는다.
+
+### 브라우저 푸시 구독 (0023, ADR 0012)
+
+- `push_subscriptions`: 브라우저가 준 구독(endpoint + 브라우저 키 `p256dh` · `auth`). 이 값이 있으면 그 브라우저로 알림을 보낼 수 있어 **원문을 저장하지 않는다**: 셋을 JSON으로 묶어 암호화(`subscription_enc`, AAD `push_subscription:<user_id>`), 중복 확인은 키 있는 해시(`endpoint_hash`, `CANVAS_TOKEN_KEY`에서 HKDF로 파생한 키의 HMAC-SHA256). iCloud 링크와 같은 방식
+- **endpoint 하나에 한 행**(사용자와 상관없이 UNIQUE). 같은 브라우저에서 다른 계정이 등록하면 행의 주인(`user_id`)이 바뀌어, 이전 계정의 알림이 그 브라우저로 가지 않는다
+- 사용자당 최대 10개(앱 상수). 넘으면 같은 사용자 안에서 가장 오래 성공 못 한(마지막 성공 → 만든 시각이 가장 이른) 구독을 교체
+- 발송 결과: 성공이면 `last_success_at` · 연속 실패 0, 404 · 410(구독 만료)이면 행 삭제, 그 밖의 실패는 `consecutive_failures` +1 · `last_failure_code`
+- 계정 삭제 때 함께 지워진다(FK CASCADE). Canvas 연동 해제와는 무관(`users`를 가리킴)
+- 되돌리기 보호: 0023의 down은 행이 있으면 실패하고 지우지 않는다
 
