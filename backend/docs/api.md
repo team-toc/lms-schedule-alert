@@ -188,6 +188,8 @@ export default defineConfig({
 
 로그아웃. 세션을 지우고 `sid` 쿠키를 지운다(`Set-Cookie: sid=; Expires=Thu, 01 Jan 1970 …`).
 
+- **브라우저 푸시를 켠 경우 이 요청 전에** ① `pushSubscription.unsubscribe()` ② `DELETE /api/push/subscriptions` 순서로 이 브라우저 구독을 해제한다(이유는 [docs/push.md](push.md) "로그아웃 순서"). 로그아웃 API는 구독을 지우지 않는다(어느 브라우저인지 모름)
+
 - 요청: 본문 필요 없음(보내도 무시. 단, `Content-Type: application/json`으로 깨진 JSON을 보내면 400 `invalid_json`)
 - 성공 **204** (본문 없음)
 - 실패
@@ -1044,3 +1046,5 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 1. **소셜 로그인 에러 화면 경로**: 지금은 `FRONTEND_URL/login/error?error=<코드>`. 경로(`/login/error`)와 쿼리 이름(`error`)을 이대로 갈지.
 2. **로그인 성공 후 이동 경로**: 지금은 항상 `FRONTEND_URL` 루트. `onboardingStep`에 따라 백엔드가 바로 토큰 입력 화면(예: `/onboarding/lms-token`)으로 보낼지, 프론트가 `/me`를 보고 분기할지.
 3. **이미 로그아웃된 상태에서 로그아웃**: 지금은 401 `already_logged_out`. 결과가 같으니(로그아웃 상태) 204로 바꿀지.
+4. **푸시 알림을 눌렀을 때 열 화면 URL**: 지금 payload의 `url`은 임시 `/?view=notifications`(프론트는 URL 경로 없이 화면 상태로 전환). 경로 이름과, 알림 하나를 바로 열지(`notificationId`) 목록만 열지([docs/push.md](push.md) 10절).
+5. **Chrome 구독 주소의 호스트(확인 필요)**: 백엔드는 `fcm.googleapis.com`을 허용. 실제 Chrome 구독의 `endpoint` 호스트를 한 번 확인해 알려 주면 확정한다.
