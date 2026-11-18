@@ -47,6 +47,21 @@ npm run dev
 | `CANVAS_TOKEN_KEY` | 비밀 암호화 키: Canvas 토큰 · iCloud 공개 링크 암호화와 링크 중복 확인 해시(이 키에서 파생)에 함께 쓴다. `openssl rand -base64 32` (32바이트 base64). **잃어버리면 저장된 Canvas 토큰 · iCloud 링크를 모두 복구할 수 없다**(사용자가 다시 등록해야 함) |
 | `LMS_SYNC_INTERVAL_MINUTES` | Canvas 주기 동기화 간격(분). 기본 30 |
 | `LMS_SYNC_CONCURRENCY` | 동시에 도는 Canvas 동기화 수(첫 · 주기 · 수동 합계). 1 ~ 3, 기본 2 (DB 풀 10개를 API와 나눠 씀) |
+| `VAPID_PUBLIC_KEY` | 브라우저 푸시 VAPID 공개키(P-256, 65바이트 base64url). 프론트가 구독할 때 쓰는 공개값. **서버 시작 필수**, 만드는 법은 아래 |
+| `VAPID_PRIVATE_KEY` | VAPID 개인키(32바이트 base64url). **비밀값**. 공개키와 같이 만든 짝이어야 함(시작 때 검사). **잃어버리거나 바꾸면 모든 브라우저 구독이 무효**(사용자 브라우저가 다시 구독해야 함) → 따로 백업 |
+| `VAPID_SUBJECT` | 푸시 서비스가 연락할 주소. `mailto:주소` 또는 `https://…` |
+
+#### VAPID 키 만들기
+
+운영용 · 개발용(팀원마다)을 **따로** 만든다. 한 쌍을 여러 서버가 나눠 쓰지 않는다(개발 서버에서 새면 운영 구독으로 보낼 수 있게 됨).
+
+```bash
+node -e "const {generateKeyPairSync}=require('node:crypto');const j=generateKeyPairSync('ec',{namedCurve:'P-256'}).privateKey.export({format:'jwk'});console.log('VAPID_PUBLIC_KEY='+Buffer.concat([Buffer.from([4]),Buffer.from(j.x,'base64url'),Buffer.from(j.y,'base64url')]).toString('base64url'));console.log('VAPID_PRIVATE_KEY='+j.d)"
+```
+
+- 출력 두 줄을 `.env`에 붙이고 `VAPID_SUBJECT`를 채운다. 셋 중 하나라도 없거나 틀리면 서버가 키 이름만 출력하고 시작하지 않는다
+- `createECDH().getPrivateKey()`로 만들면 가끔(약 1/256) 31바이트가 나와 시작 검사에서 거부된다 → 위 명령(JWK)을 쓸 것
+- 개인키는 서버 밖(비밀 저장소)에 백업한다. 바꾸면 프론트도 새 공개키로 다시 구독해야 한다
 
 ## 마이그레이션
 

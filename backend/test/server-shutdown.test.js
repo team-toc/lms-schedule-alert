@@ -4,11 +4,14 @@ import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { testDbConnectionEnv } from './helpers/test-db.js'
 import { childProcessEnv } from './helpers/child-env.js'
+import { generateVapidKeys } from './helpers/push-context.js'
 
 const BACKEND_DIR = fileURLToPath(new URL('..', import.meta.url))
 const START_TIMEOUT_MS = 10000
 const EXIT_TIMEOUT_MS = 10000
 const PORT = 40000 + Math.floor(Math.random() * 20000)
+// 푸시 설정(ADR 0012)이 필수가 되어 테스트용 VAPID 키 쌍을 넣는다(Canvas 키를 넣은 것과 같은 이유)
+const VAPID = generateVapidKeys()
 
 // 실제 서버(src/index.js)를 테스트 DB에 붙여 띄운다. Canvas는 부르지 않는다(첫 주기 실행은 한 주기 뒤).
 function serverEnv() {
@@ -27,6 +30,9 @@ function serverEnv() {
     GOOGLE_REDIRECT_URI: 'http://backend.test/api/auth/google/callback',
     CANVAS_BASE_URL: 'https://canvas.unused.test',
     CANVAS_TOKEN_KEY: Buffer.alloc(32, 3).toString('base64'),
+    VAPID_PUBLIC_KEY: VAPID.publicKey,
+    VAPID_PRIVATE_KEY: VAPID.privateKey,
+    VAPID_SUBJECT: 'mailto:server-shutdown-test@example.com',
     LOG_LEVEL: 'info',
   })
 }
