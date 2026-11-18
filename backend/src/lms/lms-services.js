@@ -19,12 +19,14 @@ import { createRuleExtractor } from '../suggestions/rule-extractor.js'
 import { createSuggestionStep } from '../suggestions/suggestion-step.js'
 import { createSuggestionRepository } from '../suggestions/suggestion-repository.js'
 import { createSuggestionService } from '../suggestions/suggestion-service.js'
+import { createPushServices } from '../push/push-services.js'
 
 const DEFAULT_SYNC_CONCURRENCY = 2
 
 // icloudFetchFn: iCloud 공개 캘린더 요청용 fetch(테스트는 가짜). 동시 실행 상한은 Canvas · iCloud 실행기가 제한기 하나를 함께 쓴다(ADR 0010)
 // 공지 일정 제안(ADR 0011): classPeriods는 교시 시간표(Map, 서버는 config/class-periods.json). Canvas 반영이 커밋된 뒤
 // 같은 사용자 잠금 안에서 제안 단계를 돈다. suggestionExtractor · afterCanvasApplied는 바꿔 끼우기용(기본은 규칙 추출기 · 제안 단계)
+// 브라우저 푸시(ADR 0012): push = { config, fetchFn }. 없으면 푸시 서비스 없음(라우트는 503) — 서버는 항상 넘긴다
 export function createLmsServices(options) {
   const { pool, logger, lmsConfig, fetchFn = globalThis.fetch, icloudFetchFn = globalThis.fetch, now = () => new Date() } = options
   const extractor = options.suggestionExtractor ?? createRuleExtractor({ classPeriods: options.classPeriods ?? new Map() })
@@ -64,5 +66,6 @@ export function createLmsServices(options) {
     scheduleService: createScheduleService({ repository: createScheduleRepository(pool), now }),
     suggestionService: createSuggestionService({ repository: createSuggestionRepository(pool, { logger }), now }),
     ...createCalendarServices({ pool, logger, lmsConfig, icloudFetchFn, now, limit }),
+    pushServices: createPushServices({ pool, logger, lmsConfig, push: options.push }),
   }
 }

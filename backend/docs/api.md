@@ -145,6 +145,9 @@ export default defineConfig({
 | GET | `/api/suggestions` | 예 | 공지에서 찾은 일정 제안 목록 |
 | POST | `/api/suggestions/:id/accept` | 예 | 제안 수락(앱 일정으로 만들기, 값 고치기 가능) |
 | POST | `/api/suggestions/:id/reject` | 예 | 제안 거절 |
+| GET | `/api/push/public-key` | 아니요 | 브라우저 푸시 VAPID 공개키(구독할 때 씀) |
+| POST | `/api/push/subscriptions` | 예 | 이 브라우저의 푸시 구독 등록(같은 주소면 갱신) |
+| DELETE | `/api/push/subscriptions` | 예 | 이 브라우저의 푸시 구독 해제 |
 
 ### GET /api/health
 
@@ -805,6 +808,52 @@ Canvas 공지(제목 · 본문)에서 규칙으로 찾은 날짜를 **내** 일�
 - 성공 **204** (본문 없음)
 - 실패: **404** `suggestion_not_found`(수락과 같음), **409** `suggestion_already_decided`
 
+### GET /api/push/public-key
+
+브라우저 푸시(Web Push) 구독에 쓰는 VAPID 공개키. 공개값이라 **로그인 필요 없음**. 연동 흐름은 [docs/push.md](push.md).
+
+- 성공 **200**
+
+  ```json
+  { "publicKey": "BNc…(base64url, 65바이트)" }
+  ```
+
+  - 서비스 워커의 `pushManager.subscribe({ userVisibleOnly: true, applicationServerKey })`에 이 값을 바이트로 바꿔 넘긴다
+- 실패: **503** `push_unavailable` — 서버에 푸시 설정이 없음(운영 서버는 설정이 없으면 시작하지 않으므로 개발 · 테스트에서만)
+
+### POST /api/push/subscriptions
+
+이 브라우저의 푸시 구독(`PushSubscription.toJSON()`)을 내 계정에 등록한다. 등록한 브라우저로 Canvas 변경 알림이 푸시된다.
+
+- 로그인 필요
+- 요청 본문: `PushSubscription.toJSON()` 그대로(`expirationTime`은 무시)
+
+  ```json
+  { "endpoint": "https://fcm.googleapis.com/fcm/send/…", "keys": { "p256dh": "BN…", "auth": "Hx…" } }
+  ```
+
+- 성공: **201**(새로) · **200**(같은 endpoint 갱신), 본문 `{}`
+  - **같은 endpoint는 계정과 상관없이 한 구독**: 같은 브라우저에서 다른 계정으로 로그인해 등록하면 그 구독은 새 계정 것이 된다(이전 계정 알림은 더 안 감)
+  - 계정당 최대 10개. 넘으면 그 계정에서 가장 오래 발송에 성공하지 못한 구독을 지우고 새것을 넣는다(오류 아님)
+  - 서버는 endpoint · 키 원문을 저장하지 않는다(암호화)
+- 실패: **400** `{ error, field, message }`
+
+  | `error` | `field` | 언제 |
+  | --- | --- | --- |
+  | `missing_endpoint` · `invalid_endpoint` · `endpoint_too_long` | `endpoint` | 없음 · 문자열이 아니거나 URL이 아님 · 계정 정보나 443 밖 포트 · 2048자 초과 |
+  | `insecure_endpoint` | `endpoint` | https가 아님 |
+  | `push_service_not_allowed` | `endpoint` | 알려진 브라우저 푸시 서비스(Chrome · Edge · Firefox · Safari)의 주소가 아님 |
+  | `missing_keys` · `invalid_p256dh` · `invalid_auth` | `keys` · `keys.p256dh` · `keys.auth` | 키가 없거나 형식이 틀림 |
+
+### DELETE /api/push/subscriptions
+
+이 브라우저의 구독을 내 계정에서 지운다. **로그아웃 전에 부른다**(순서는 [docs/push.md](push.md) "로그아웃 순서").
+
+- 로그인 필요
+- 요청 본문: `{ "endpoint": "https://…" }`
+- 성공 **204** (본문 없음)
+- 실패: **404** `push_subscription_not_found` — 내 구독이 아님(없음 · 이미 지움 · 다른 계정 것 모두 같은 응답), **400** `missing_endpoint` 등(위 표의 endpoint 문자열 · 길이 검사만)
+
 ### GET /api/calendar/conflicts
 
 기간 안에서 **시간이 겹치는 내 일정 쌍**. 앱 일정 · 가져온 일정끼리(과제 마감은 포함하지 않음).
@@ -907,7 +956,7 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 
 | `error` | 상태 | 어디서 | 의미 | 프론트에서 할 일 |
 | --- | --- | --- | --- | --- |
-| `not_authenticated` | 401 | `GET /me`, `/api/lms/*` · `/api/calendar/*`(일정 포함) · `/api/notifications/*` · `/api/suggestions/*` | 로그인 안 됨 · 세션 만료 · 계정 삭제 | 로그인 화면으로 |
+| `not_authenticated` | 401 | `GET /me`, `/api/lms/*` · `/api/calendar/*`(일정 포함) · `/api/notifications/*` · `/api/suggestions/*` · 푸시 구독 · 테스트 발송 | 로그인 안 됨 · 세션 만료 · 계정 삭제 | 로그인 화면으로 |
 | `already_logged_out` | 401 | `POST /logout` | 이미 로그아웃 상태 | 로그아웃 성공처럼 처리(로그인 화면으로) |
 | `missing_email` | 400 | 이메일 가입 · 로그인 | 이메일 없음 | `field: email` 입력칸에 `message` 표시 |
 | `invalid_email` | 400 | 이메일 가입 · 로그인 | 이메일 형식 틀림 | 위와 같음 |
@@ -950,6 +999,10 @@ navigate(onboardingStep === 'lms_token' ? '/onboarding/lms-token' : '/')
 | `suggestion_not_found` | 404 | 제안 수락 · 거절 | 없음 · 다른 사람의 제안 | 목록을 새로 불러온다 |
 | `suggestion_already_decided` | 409 | 제안 수락 · 거절 | 이미 수락 · 거절함 | 목록을 새로 불러온다 |
 | `suggestion_expired` | 409 | 제안 수락 | 날짜가 지난 제안 | 수락 버튼을 숨기고 거절(정리)만 보여 준다 |
+| `missing_endpoint` · `invalid_endpoint` · `insecure_endpoint` · `endpoint_too_long` · `push_service_not_allowed` | 400 | 푸시 구독 등록 · 해제 | 구독 주소 문제 | 프론트 버그거나 지원하지 않는 브라우저. 푸시 켜기를 실패로 보여 준다 |
+| `missing_keys` · `invalid_p256dh` · `invalid_auth` | 400 | 푸시 구독 등록 | 구독 키 문제 | 프론트 버그. `subscription.toJSON()`을 그대로 보낸다 |
+| `push_subscription_not_found` | 404 | 푸시 구독 해제 | 내 구독이 아님 | 이미 지운 것으로 보고 넘어간다 |
+| `push_unavailable` | 503 | 푸시 API 전체 | 서버에 푸시 설정 없음(개발 · 테스트) | 푸시 켜기 버튼을 숨긴다 |
 | `lms_needs_reauth` | 409 | 수동 동기화 | 토큰 만료 · 취소 | 토큰을 다시 등록하라고 안내 |
 | `sync_too_frequent` | 429 | Canvas · 캘린더 수동 동기화 | 5분 안에 다시 요청 | `Retry-After`(초)만큼 동기화 버튼 비활성화 |
 | `canvas_rate_limited` | 503 | Canvas 토큰 등록 | Canvas 요청 한도 초과 | 위와 같음 |

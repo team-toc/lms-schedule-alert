@@ -1,4 +1,4 @@
-// 비밀 문자열 암호화 · 복호화 경계 레이어 (AES-256-GCM, ADR 0008 · 0010). Canvas 토큰과 iCloud 공개 링크에 쓴다.
+// 비밀 문자열 암호화 · 복호화 경계 레이어 (AES-256-GCM, ADR 0008 · 0010 · 0012). Canvas 토큰 · iCloud 공개 링크 · 브라우저 푸시 구독에 쓴다.
 // 저장 형식: 'v1:' + base64(IV 12바이트 ‖ 인증 태그 16바이트 ‖ 암호문). AAD에 용도와 user_id를 넣어
 // 다른 사용자 행으로 옮기거나 다른 용도(토큰 ↔ 링크)로 바꿔 끼운 암호문은 풀리지 않는다.
 // 토큰 · 암호문은 에러 메시지에 넣지 않는다.
@@ -24,6 +24,8 @@ export class TokenDecryptError extends Error {
 export const CIPHER_CONTEXTS = Object.freeze({
   lmsToken: (userId) => `lms_tokens.user_id:${userId}`,
   icloudLink: (userId) => `calendar_link:icloud:${userId}`,
+  // 브라우저 푸시 구독(endpoint · p256dh · auth JSON, ADR 0012). 주인이 바뀌면 새 주인 기준으로 다시 암호화한다
+  pushSubscription: (userId) => `push_subscription:${userId}`,
 })
 
 function additionalData(context, userId) {
