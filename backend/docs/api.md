@@ -148,6 +148,7 @@ export default defineConfig({
 | GET | `/api/push/public-key` | 아니요 | 브라우저 푸시 VAPID 공개키(구독할 때 씀) |
 | POST | `/api/push/subscriptions` | 예 | 이 브라우저의 푸시 구독 등록(같은 주소면 갱신) |
 | DELETE | `/api/push/subscriptions` | 예 | 이 브라우저의 푸시 구독 해제 |
+| POST | `/api/push/test` | 예 | (개발용, 운영에는 없음) 내 구독으로 테스트 푸시 |
 
 ### GET /api/health
 
@@ -853,6 +854,15 @@ Canvas 공지(제목 · 본문)에서 규칙으로 찾은 날짜를 **내** 일�
 - 요청 본문: `{ "endpoint": "https://…" }`
 - 성공 **204** (본문 없음)
 - 실패: **404** `push_subscription_not_found` — 내 구독이 아님(없음 · 이미 지움 · 다른 계정 것 모두 같은 응답), **400** `missing_endpoint` 등(위 표의 endpoint 문자열 · 길이 검사만)
+
+### POST /api/push/test
+
+**개발용.** 내 구독마다 테스트 푸시를 하나씩 보낸다(서비스 워커 연동 확인용). **운영 서버(`NODE_ENV=production`)에는 이 경로가 없다**(404 `not_found`).
+
+- 로그인 필요(개발 서버)
+- 요청 본문 없음
+- 성공 **202** `{ "queued": 2 }` — 보낼 구독 수. 실제 발송은 백그라운드라 응답 뒤에 도착한다
+- 받는 내용: `{ "v": 1, "notificationId": null, "kind": "test", "title": "테스트 알림", "body": "…", "url": "/?view=notifications" }`
 
 ### GET /api/calendar/conflicts
 

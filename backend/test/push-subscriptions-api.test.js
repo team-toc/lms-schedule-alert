@@ -215,6 +215,24 @@ describe('푸시 구독 API (/api/push)', () => {
     assert.equal((await pushRows(ctx.pool)).length, 0)
   })
 
+  it('테스트 발송(개발용): 202 { queued } → 내 구독마다 한 번, 남의 구독에는 안 감. 운영 설정이면 라우트가 없다(404)', async () => {
+    const mine = [makeSubscription(), makeSubscription({ host: 'web.push.apple.com', path: '/QOk1TestExample' })]
+    for (const sub of mine) await register(a, sub).expect(201)
+    const theirs = makeSubscription()
+    await register(b, theirs).expect(201)
+
+    assert.deepEqual((await a.agent.post(PUSH_TEST_PATH).expect(202)).body, { queued: 2 })
+    await built.lms.pushDispatcher.whenIdle()
+
+    assert.deepEqual(built.push.requests.map((r) => r.url).sort(), mine.map((s) => s.endpoint).sort())
+    assert.equal(built.push.payloadOf(built.push.to(mine[0].endpoint)[0], mine[0]).kind, 'test')
+
+    // 운영 설정: 라우트 자체가 없어 로그인 확인보다 먼저 404(개발 설정에서는 같은 요청이 401)
+    const prod = buildPushApp(ctx, { config: { ...ctx.config, isProduction: true } })
+    assert.equal((await request(prod.app).post(PUSH_TEST_PATH).expect(404)).body.error, 'not_found')
+    await request(built.app).post(PUSH_TEST_PATH).expect(401)
+  })
+
   it('푸시 설정 없이 만든 앱(기존 테스트 기본값): 라우트는 있지만 503 push_unavailable', async () => {
     const app = ctx.buildApp(createFakeKakaoClient())
     assert.equal((await request(app).get(PUBLIC_KEY_PATH).expect(503)).body.error, 'push_unavailable')

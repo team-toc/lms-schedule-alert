@@ -64,10 +64,10 @@ export async function openTestContext() {
   // 없는 이메일용 가짜 해시: 실제 서버처럼 시작할 때(파일마다) 한 번만 만든다
   const dummyPasswordHash = await createDummyPasswordHash(createPasswordHasher())
   // express-session은 미들웨어마다 저장소에 리스너를 붙이므로, 앱마다 저장소를 따로 만들고 끝에 모두 닫는다.
-  // Canvas 서비스는 DB를 비우거나 닫기 전에 백그라운드 동기화가 끝나기를 기다린다(테스트 사이 누수 방지, 한 곳에서 처리).
+  // Canvas 서비스는 DB를 비우거나 닫기 전에 백그라운드 동기화 · 푸시 발송이 끝나기를 기다린다(테스트 사이 누수 방지, 한 곳에서 처리).
   const shared = { sessionStores: [], lmsInstances: [] }
   const waitForBackgroundSyncs = () =>
-    Promise.all(shared.lmsInstances.flatMap((lms) => [lms.syncRunner.whenIdle(), lms.calendarSyncRunner?.whenIdle()]))
+    Promise.all(shared.lmsInstances.flatMap((lms) => [lms.syncRunner.whenIdle(), lms.calendarSyncRunner?.whenIdle(), lms.pushDispatcher?.whenIdle()]))
 
   return {
     ...db,

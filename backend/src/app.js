@@ -77,7 +77,7 @@ export function createApp(deps) {
   app.use('/api/calendar', createCalendarLinkRouter(lmsServices))
   app.use('/api', createNotificationRouter(lmsServices))
   app.use('/api', createSuggestionRouter(lmsServices))
-  app.use('/api', createPushRouter(lmsServices))
+  app.use('/api', createPushRouter(lmsServices, { testRoute: !config.isProduction }))
   app.use('/api', respondNotFound)
 
   app.use(handleUnexpectedError)

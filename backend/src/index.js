@@ -35,8 +35,8 @@ const passwordHasher = createPasswordHasher()
 const dummyPasswordHash = await createDummyPasswordHash(passwordHasher)
 const lmsServices = createLmsServices({ pool, logger, lmsConfig, classPeriods, push: { config: pushConfig } })
 const app = createApp({ config, logger, pool, kakaoClient, googleClient, sessionStore, passwordHasher, dummyPasswordHash, lmsServices })
-// Canvas · iCloud 두 실행기를 함께 시작 · 정지 · 대기 (shutdown.js는 실행기 하나처럼 다룬다)
-const runners = [lmsServices.syncRunner, lmsServices.calendarSyncRunner]
+// Canvas · iCloud 실행기와 푸시 발송기를 함께 시작 · 정지 · 대기 (shutdown.js는 실행기 하나처럼 다룬다, 기존 종료 대기 안에서 기다림)
+const runners = [lmsServices.syncRunner, lmsServices.calendarSyncRunner, lmsServices.pushDispatcher]
 const allRunners = {
   start: () => runners.forEach((runner) => runner.start()),
   stop: () => runners.forEach((runner) => runner.stop()),
