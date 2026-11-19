@@ -172,7 +172,7 @@ erDiagram
     announcement_scans {
         bigint_unsigned user_id PK "FK → lms_tokens.user_id"
         bigint_unsigned announcement_id PK "FK → announcements.id"
-        char(64) content_hash "NOT NULL, ascii, 훑은 공지 내용 해시 (같으면 다시 훑지 않음)"
+        char(64) content_hash "NOT NULL, ascii, 훑은 키 = sha256(공지 content_hash | 추출기 버전) (같으면 다시 훑지 않음)"
         datetime(3) scanned_at "NOT NULL"
     }
 
@@ -339,7 +339,7 @@ erDiagram
 - 공지 본문(HTML)에서 규칙으로 날짜 · 시각 · 종류를 뽑아 **사용자별 제안**(`suggestions`)으로 둔다. 사용자가 수락하면 `source = 'app'` 앱 일정을 만들고 `schedule_id`로 잇는다(`schedules`는 그대로). 거절 · 수락한 제안은 다시 추출해도 바꾸지 않는다.
 - `candidate_key`는 시작 · 끝 · 하루 종일만으로 만든다(종류 제외): 분류 규칙이 바뀌어도 같은 시각은 한 제안. 다시 추출해 종류가 바뀌면 대기 제안의 `kind`만 고친다.
 - 만료(대기인데 시각이 지남)는 칼럼이 아니라 조회 때 계산한다.
-- `announcement_scans`: 사용자별로 공지를 어느 `content_hash`까지 훑었는지. 같으면 다시 훑지 않는다(재동기화 멱등).
+- `announcement_scans`: 사용자별로 공지를 어떤 내용 · 어떤 추출기로 훑었는지. 칼럼 이름은 `content_hash`지만 값은 `sha256(공지 content_hash | 추출기 버전)`(2026-11-19, 마이그레이션 없음). 같으면 다시 훑지 않고(재동기화 멱등), 공지 내용이나 추출기 버전(규칙 버전 상수 + 교시 시간표 내용)이 바뀌면 한 번 다시 훑는다.
 - 두 표의 `user_id`는 `lms_tokens(user_id)`(UNIQUE)를 가리킨다: **연동 해제 · 사용자 삭제 때 같은 DELETE 안에서 함께 지워지고**, 수락해서 만든 앱 일정은 남는다. 토큰 교체 · 재등록은 `INSERT … ON DUPLICATE KEY UPDATE`(행 UPDATE)라 제안이 남는다.
 - 공지 본문은 저장하지 않는다(맥락 60자만).
 - 되돌리기 보호: 0021 ~ 0022의 down은 행이 있으면 실패하고 지우지 않는다.

@@ -1,9 +1,15 @@
 // 규칙 기반 일정 추출기 (ADR 0011). AI 없이 정규식 · 낱말만. 바꿔 끼울 수 있는 경계: { extract({ title, text, postedAt }) → 후보[] }
 // 결정적 순수 함수: now · 서버 시간대를 모르고, 시각은 서울로 해석해 UTC Date로 돌려준다.
 // 지난 날짜 · 중복 · 상한은 추출기 밖(제안 단계)에서 거른다.
+import { createHash } from 'node:crypto'
 import { parseDateOnly, seoulDate, seoulMidnight } from '../calendar/seoul-time.js'
 import { findDates, joinRanges } from './date-patterns.js'
 import { findTime, startsWithTime } from './time-patterns.js'
+
+// 규칙 버전. **추출 규칙(정규식 · 낱말 · 묶기 · 시각 계산)을 바꾸면 반드시 1 올린다** — 버전이 바뀌면 이미 훑은 공지도
+// 다음 동기화에서 한 번 다시 분석된다(ADR 0011, 2026-11-19). 교시 시간표 내용은 따로 버전에 들어가므로 시간표만 바꿀 때는 올리지 않아도 된다.
+// 1: 첫 규칙, 2: 쉼표 뒤 시각 묶기 · 명시 시각 + 교시 끝 · 시험 평가 낱말(2026-11-19)
+export const EXTRACTOR_RULES_VERSION = 2
 
 const MINUTE_MS = 60 * 1000
 const DAY_MS = 24 * 60 * MINUTE_MS
@@ -98,8 +104,16 @@ function lineCandidates(rawLine, { base, title, classPeriods }) {
   })
 }
 
+// 교시 시간표 내용의 짧은 해시(교시 순서대로, 같은 내용이면 같은 값)
+function periodsDigest(classPeriods) {
+  const entries = [...classPeriods.entries()].sort(([x], [y]) => x - y)
+  return createHash('sha256').update(JSON.stringify(entries)).digest('hex').slice(0, 16)
+}
+
 export function createRuleExtractor({ classPeriods }) {
   return {
+    // 추출기 버전: 규칙 버전 상수 + 교시 시간표 내용. 제안 단계가 훑은 기록 판단에 쓴다
+    version: `rules:${EXTRACTOR_RULES_VERSION}|periods:${periodsDigest(classPeriods)}`,
     extract({ title, text, postedAt }) {
       const base = parseDateOnly(seoulDate(postedAt))
       const options = { base, title: title ?? '', classPeriods }
