@@ -1,171 +1,270 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
 <rect width="1600" height="900" fill="#fff"/>
-<rect x="60" y="70" width="300" height="182" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
-<path d="M60 110h300" stroke="#D1D1D6" stroke-width="1.5"/>
+<rect x="60" y="70" width="330" height="156" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
+<path d="M60 110h330" stroke="#D1D1D6" stroke-width="1.5"/>
 <text x="76" y="96" font-size="16" font-weight="800" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">users</text>
+<text x="376" y="96" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">사용자</text>
 <rect x="74" y="116" width="26" height="17" rx="5" fill="#E7F1FF"/>
 <text x="87" y="128" font-size="10.5" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">PK</text>
 <text x="110" y="128" font-size="14" font-weight="600" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">id</text>
-<text x="110" y="154" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">email</text>
-<text x="110" y="180" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">password_hash</text>
-<text x="110" y="206" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">name</text>
-<text x="110" y="232" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">created_at</text>
-<rect x="60" y="330" width="300" height="156" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
-<path d="M60 370h300" stroke="#D1D1D6" stroke-width="1.5"/>
-<text x="76" y="356" font-size="16" font-weight="800" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">lms_tokens</text>
-<rect x="74" y="376" width="26" height="17" rx="5" fill="#E7F1FF"/>
-<text x="87" y="388" font-size="10.5" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">PK</text>
-<text x="110" y="388" font-size="14" font-weight="600" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">id</text>
-<rect x="74" y="402" width="26" height="17" rx="5" fill="#F2F2F7"/>
-<text x="87" y="414" font-size="10.5" font-weight="700" fill="#6E6E73" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">FK</text>
-<text x="110" y="414" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">user_id</text>
-<text x="110" y="440" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">token_enc</text>
-<text x="110" y="466" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">connected_at</text>
-<rect x="60" y="530" width="300" height="182" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
-<path d="M60 570h300" stroke="#D1D1D6" stroke-width="1.5"/>
-<text x="76" y="556" font-size="16" font-weight="800" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">calendar_links</text>
-<rect x="74" y="576" width="26" height="17" rx="5" fill="#E7F1FF"/>
-<text x="87" y="588" font-size="10.5" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">PK</text>
-<text x="110" y="588" font-size="14" font-weight="600" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">id</text>
-<rect x="74" y="602" width="26" height="17" rx="5" fill="#F2F2F7"/>
-<text x="87" y="614" font-size="10.5" font-weight="700" fill="#6E6E73" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">FK</text>
-<text x="110" y="614" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">user_id</text>
-<text x="110" y="640" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">provider</text>
-<text x="110" y="666" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">external_id</text>
-<text x="110" y="692" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">connected_at</text>
-<rect x="440" y="70" width="300" height="156" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
-<path d="M440 110h300" stroke="#D1D1D6" stroke-width="1.5"/>
+<text x="376" y="128" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">번호</text>
+<text x="110" y="154" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">display_name</text>
+<text x="376" y="154" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">표시 이름</text>
+<text x="110" y="180" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">onboarding_step</text>
+<text x="376" y="180" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">가입 단계</text>
+<text x="110" y="206" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">created_at</text>
+<text x="376" y="206" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">가입일</text>
+<rect x="60" y="262" width="330" height="156" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
+<path d="M60 302h330" stroke="#D1D1D6" stroke-width="1.5"/>
+<text x="76" y="288" font-size="16" font-weight="800" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">auth_identities</text>
+<text x="376" y="288" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">로그인 수단</text>
+<rect x="74" y="308" width="26" height="17" rx="5" fill="#E7F1FF"/>
+<text x="87" y="320" font-size="10.5" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">PK</text>
+<text x="110" y="320" font-size="14" font-weight="600" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">id</text>
+<text x="376" y="320" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">번호</text>
+<rect x="74" y="334" width="26" height="17" rx="5" fill="#F2F2F7"/>
+<text x="87" y="346" font-size="10.5" font-weight="700" fill="#6E6E73" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">FK</text>
+<text x="110" y="346" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">user_id</text>
+<text x="376" y="346" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">사용자</text>
+<text x="110" y="372" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">provider</text>
+<text x="376" y="372" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">카카오 · 구글 · 이메일</text>
+<text x="110" y="398" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">provider_user_id</text>
+<text x="376" y="398" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">제공자 ID 또는 이메일</text>
+<rect x="440" y="262" width="330" height="156" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
+<path d="M440 302h330" stroke="#D1D1D6" stroke-width="1.5"/>
+<text x="456" y="288" font-size="16" font-weight="800" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">password_credentials</text>
+<text x="756" y="288" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">비밀번호 (이메일 로그인)</text>
+<rect x="454" y="308" width="26" height="17" rx="5" fill="#E7F1FF"/>
+<text x="467" y="320" font-size="10.5" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">PK</text>
+<text x="490" y="320" font-size="14" font-weight="600" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">id</text>
+<text x="756" y="320" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">번호</text>
+<rect x="454" y="334" width="26" height="17" rx="5" fill="#F2F2F7"/>
+<text x="467" y="346" font-size="10.5" font-weight="700" fill="#6E6E73" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">FK</text>
+<text x="490" y="346" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">identity_id</text>
+<text x="756" y="346" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">로그인 수단</text>
+<text x="490" y="372" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">password_hash</text>
+<text x="756" y="372" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">argon2id 해시</text>
+<text x="490" y="398" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">email_verified</text>
+<text x="756" y="398" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">메일 인증 여부</text>
+<rect x="60" y="454" width="330" height="156" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
+<path d="M60 494h330" stroke="#D1D1D6" stroke-width="1.5"/>
+<text x="76" y="480" font-size="16" font-weight="800" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">lms_tokens</text>
+<text x="376" y="480" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">LMS 토큰</text>
+<rect x="74" y="500" width="26" height="17" rx="5" fill="#E7F1FF"/>
+<text x="87" y="512" font-size="10.5" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">PK</text>
+<text x="110" y="512" font-size="14" font-weight="600" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">id</text>
+<text x="376" y="512" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">번호</text>
+<rect x="74" y="526" width="26" height="17" rx="5" fill="#F2F2F7"/>
+<text x="87" y="538" font-size="10.5" font-weight="700" fill="#6E6E73" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">FK</text>
+<text x="110" y="538" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">user_id</text>
+<text x="376" y="538" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">사용자</text>
+<text x="110" y="564" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">token_enc</text>
+<text x="376" y="564" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">암호화한 토큰</text>
+<text x="110" y="590" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">connected_at</text>
+<text x="376" y="590" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">연결일</text>
+<rect x="60" y="646" width="330" height="208" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
+<path d="M60 686h330" stroke="#D1D1D6" stroke-width="1.5"/>
+<text x="76" y="672" font-size="16" font-weight="800" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">calendar_links</text>
+<text x="376" y="672" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">외부 캘린더</text>
+<rect x="74" y="692" width="26" height="17" rx="5" fill="#E7F1FF"/>
+<text x="87" y="704" font-size="10.5" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">PK</text>
+<text x="110" y="704" font-size="14" font-weight="600" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">id</text>
+<text x="376" y="704" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">번호</text>
+<rect x="74" y="718" width="26" height="17" rx="5" fill="#F2F2F7"/>
+<text x="87" y="730" font-size="10.5" font-weight="700" fill="#6E6E73" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">FK</text>
+<text x="110" y="730" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">user_id</text>
+<text x="376" y="730" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">사용자</text>
+<text x="110" y="756" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">provider</text>
+<text x="376" y="756" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">애플 · 구글 · 카카오</text>
+<text x="110" y="782" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">ics_url</text>
+<text x="376" y="782" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">ics 주소 (애플 · 구글)</text>
+<text x="110" y="808" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">token_enc</text>
+<text x="376" y="808" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">API 토큰 (구글 · 카카오)</text>
+<text x="110" y="834" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">connected_at</text>
+<text x="376" y="834" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">연결일</text>
+<rect x="440" y="70" width="330" height="156" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
+<path d="M440 110h330" stroke="#D1D1D6" stroke-width="1.5"/>
 <text x="456" y="96" font-size="16" font-weight="800" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">courses</text>
+<text x="756" y="96" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">과목</text>
 <rect x="454" y="116" width="26" height="17" rx="5" fill="#E7F1FF"/>
 <text x="467" y="128" font-size="10.5" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">PK</text>
 <text x="490" y="128" font-size="14" font-weight="600" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">id</text>
+<text x="756" y="128" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">번호</text>
 <rect x="454" y="142" width="26" height="17" rx="5" fill="#F2F2F7"/>
 <text x="467" y="154" font-size="10.5" font-weight="700" fill="#6E6E73" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">FK</text>
 <text x="490" y="154" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">user_id</text>
+<text x="756" y="154" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">사용자</text>
 <text x="490" y="180" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">canvas_course_id</text>
+<text x="756" y="180" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">Canvas 과목 ID</text>
 <text x="490" y="206" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">name</text>
-<rect x="440" y="530" width="300" height="208" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
-<path d="M440 570h300" stroke="#D1D1D6" stroke-width="1.5"/>
+<text x="756" y="206" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">과목명</text>
+<rect x="440" y="530" width="330" height="208" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
+<path d="M440 570h330" stroke="#D1D1D6" stroke-width="1.5"/>
 <text x="456" y="556" font-size="16" font-weight="800" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">schedules</text>
+<text x="756" y="556" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">일정</text>
 <rect x="454" y="576" width="26" height="17" rx="5" fill="#E7F1FF"/>
 <text x="467" y="588" font-size="10.5" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">PK</text>
 <text x="490" y="588" font-size="14" font-weight="600" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">id</text>
+<text x="756" y="588" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">번호</text>
 <rect x="454" y="602" width="26" height="17" rx="5" fill="#F2F2F7"/>
 <text x="467" y="614" font-size="10.5" font-weight="700" fill="#6E6E73" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">FK</text>
 <text x="490" y="614" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">user_id</text>
+<text x="756" y="614" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">사용자</text>
 <text x="490" y="640" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">title</text>
+<text x="756" y="640" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">제목</text>
 <text x="490" y="666" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">start_at</text>
+<text x="756" y="666" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">시작</text>
 <text x="490" y="692" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">end_at</text>
+<text x="756" y="692" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">끝</text>
 <text x="490" y="718" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">source</text>
-<rect x="820" y="70" width="320" height="234" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
-<path d="M820 110h320" stroke="#D1D1D6" stroke-width="1.5"/>
+<text x="756" y="718" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">수업 · 과제 · 외부 · 내 일정</text>
+<rect x="820" y="70" width="340" height="234" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
+<path d="M820 110h340" stroke="#D1D1D6" stroke-width="1.5"/>
 <text x="836" y="96" font-size="16" font-weight="800" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">announcements</text>
+<text x="1146" y="96" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">공지</text>
 <rect x="834" y="116" width="26" height="17" rx="5" fill="#E7F1FF"/>
 <text x="847" y="128" font-size="10.5" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">PK</text>
 <text x="870" y="128" font-size="14" font-weight="600" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">id</text>
+<text x="1146" y="128" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">번호</text>
 <rect x="834" y="142" width="26" height="17" rx="5" fill="#F2F2F7"/>
 <text x="847" y="154" font-size="10.5" font-weight="700" fill="#6E6E73" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">FK</text>
 <text x="870" y="154" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">course_id</text>
+<text x="1146" y="154" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">과목</text>
 <text x="870" y="180" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">canvas_id</text>
+<text x="1146" y="180" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">Canvas 공지 ID</text>
 <text x="870" y="206" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">title</text>
+<text x="1146" y="206" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">제목</text>
 <text x="870" y="232" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">body</text>
+<text x="1146" y="232" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">본문</text>
 <text x="870" y="258" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">posted_at</text>
+<text x="1146" y="258" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">게시일</text>
 <text x="870" y="284" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">content_hash</text>
-<rect x="1200" y="70" width="320" height="208" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
-<path d="M1200 110h320" stroke="#D1D1D6" stroke-width="1.5"/>
+<text x="1146" y="284" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">변경 감지용 해시</text>
+<rect x="1200" y="70" width="340" height="208" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
+<path d="M1200 110h340" stroke="#D1D1D6" stroke-width="1.5"/>
 <text x="1216" y="96" font-size="16" font-weight="800" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">assignments</text>
+<text x="1526" y="96" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">과제</text>
 <rect x="1214" y="116" width="26" height="17" rx="5" fill="#E7F1FF"/>
 <text x="1227" y="128" font-size="10.5" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">PK</text>
 <text x="1250" y="128" font-size="14" font-weight="600" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">id</text>
+<text x="1526" y="128" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">번호</text>
 <rect x="1214" y="142" width="26" height="17" rx="5" fill="#F2F2F7"/>
 <text x="1227" y="154" font-size="10.5" font-weight="700" fill="#6E6E73" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">FK</text>
 <text x="1250" y="154" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">course_id</text>
+<text x="1526" y="154" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">과목</text>
 <text x="1250" y="180" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">canvas_id</text>
+<text x="1526" y="180" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">Canvas 과제 ID</text>
 <text x="1250" y="206" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">title</text>
+<text x="1526" y="206" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">제목</text>
 <text x="1250" y="232" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">due_at</text>
+<text x="1526" y="232" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">마감</text>
 <text x="1250" y="258" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">content_hash</text>
-<rect x="820" y="360" width="320" height="234" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
-<path d="M820 400h320" stroke="#D1D1D6" stroke-width="1.5"/>
+<text x="1526" y="258" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">변경 감지용 해시</text>
+<rect x="820" y="360" width="340" height="234" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
+<path d="M820 400h340" stroke="#D1D1D6" stroke-width="1.5"/>
 <text x="836" y="386" font-size="16" font-weight="800" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">changes</text>
+<text x="1146" y="386" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">변경 이력</text>
 <rect x="834" y="406" width="26" height="17" rx="5" fill="#E7F1FF"/>
 <text x="847" y="418" font-size="10.5" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">PK</text>
 <text x="870" y="418" font-size="14" font-weight="600" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">id</text>
+<text x="1146" y="418" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">번호</text>
 <text x="870" y="444" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">source_type</text>
+<text x="1146" y="444" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">공지 / 과제</text>
 <rect x="834" y="458" width="26" height="17" rx="5" fill="#F2F2F7"/>
 <text x="847" y="470" font-size="10.5" font-weight="700" fill="#6E6E73" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">FK</text>
 <text x="870" y="470" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">source_id</text>
+<text x="1146" y="470" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">공지 · 과제 번호</text>
 <text x="870" y="496" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">field</text>
+<text x="1146" y="496" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">바뀐 항목</text>
 <text x="870" y="522" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">before_value</text>
+<text x="1146" y="522" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">전</text>
 <text x="870" y="548" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">after_value</text>
+<text x="1146" y="548" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">후</text>
 <text x="870" y="574" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">detected_at</text>
-<rect x="820" y="650" width="320" height="208" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
-<path d="M820 690h320" stroke="#D1D1D6" stroke-width="1.5"/>
+<text x="1146" y="574" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">감지 시각</text>
+<rect x="820" y="650" width="340" height="208" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
+<path d="M820 690h340" stroke="#D1D1D6" stroke-width="1.5"/>
 <text x="836" y="676" font-size="16" font-weight="800" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">notifications</text>
+<text x="1146" y="676" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">알림</text>
 <rect x="834" y="696" width="26" height="17" rx="5" fill="#E7F1FF"/>
 <text x="847" y="708" font-size="10.5" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">PK</text>
 <text x="870" y="708" font-size="14" font-weight="600" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">id</text>
+<text x="1146" y="708" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">번호</text>
 <rect x="834" y="722" width="26" height="17" rx="5" fill="#F2F2F7"/>
 <text x="847" y="734" font-size="10.5" font-weight="700" fill="#6E6E73" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">FK</text>
 <text x="870" y="734" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">user_id</text>
+<text x="1146" y="734" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">사용자</text>
 <rect x="834" y="748" width="26" height="17" rx="5" fill="#F2F2F7"/>
 <text x="847" y="760" font-size="10.5" font-weight="700" fill="#6E6E73" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">FK</text>
 <text x="870" y="760" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">change_id</text>
+<text x="1146" y="760" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">변경 이력</text>
 <text x="870" y="786" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">kind</text>
+<text x="1146" y="786" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">종류</text>
 <text x="870" y="812" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">sent_at</text>
+<text x="1146" y="812" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">보낸 시각</text>
 <text x="870" y="838" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">read_at</text>
-<rect x="1200" y="650" width="320" height="156" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
-<path d="M1200 690h320" stroke="#D1D1D6" stroke-width="1.5"/>
+<text x="1146" y="838" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">읽은 시각</text>
+<rect x="1200" y="650" width="340" height="156" rx="14" fill="#fff" stroke="#D1D1D6" stroke-width="1.5"/>
+<path d="M1200 690h340" stroke="#D1D1D6" stroke-width="1.5"/>
 <text x="1216" y="676" font-size="16" font-weight="800" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">approvals</text>
+<text x="1526" y="676" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">승인 기록</text>
 <rect x="1214" y="696" width="26" height="17" rx="5" fill="#E7F1FF"/>
 <text x="1227" y="708" font-size="10.5" font-weight="700" fill="#0062CC" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">PK</text>
 <text x="1250" y="708" font-size="14" font-weight="600" fill="#1D1D1F" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">id</text>
+<text x="1526" y="708" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">번호</text>
 <rect x="1214" y="722" width="26" height="17" rx="5" fill="#F2F2F7"/>
 <text x="1227" y="734" font-size="10.5" font-weight="700" fill="#6E6E73" text-anchor="middle" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">FK</text>
 <text x="1250" y="734" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">notification_id</text>
+<text x="1526" y="734" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">알림</text>
 <text x="1250" y="760" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">decision</text>
+<text x="1526" y="760" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">반영 / 나중에</text>
 <text x="1250" y="786" font-size="14" font-weight="500" fill="#3A3A3C" text-anchor="start" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace">decided_at</text>
-<path d="M210 252 L210 330" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
-<path d="M201 268h18" stroke="#1D1D1F" stroke-width="2"/>
-<path d="M210 310L200 330M210 310L220 330M210 310L210 330" stroke="#1D1D1F" stroke-width="2" fill="none"/>
-<path d="M60 160 L30 160 L30 600 L60 600" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
-<path d="M44 151v18" stroke="#1D1D1F" stroke-width="2"/>
-<path d="M40 600L60 590M40 600L60 610M40 600L60 600" stroke="#1D1D1F" stroke-width="2" fill="none"/>
-<path d="M360 120 L440 120" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
-<path d="M376 111v18" stroke="#1D1D1F" stroke-width="2"/>
-<path d="M420 120L440 110M420 120L440 130M420 120L440 120" stroke="#1D1D1F" stroke-width="2" fill="none"/>
-<path d="M360 200 L400 200 L400 600 L440 600" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
-<path d="M376 191v18" stroke="#1D1D1F" stroke-width="2"/>
+<text x="1526" y="786" font-size="11.5" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">결정 시각</text>
+<path d="M225 226 L225 262" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
+<path d="M216 242h18" stroke="#1D1D1F" stroke-width="2"/>
+<path d="M225 242L215 262M225 242L235 262M225 242L225 262" stroke="#1D1D1F" stroke-width="2" fill="none"/>
+<path d="M60 158 L34 158 L34 540 L60 540" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
+<path d="M44 149v18" stroke="#1D1D1F" stroke-width="2"/>
+<path d="M40 540L60 530M40 540L60 550M40 540L60 540" stroke="#1D1D1F" stroke-width="2" fill="none"/>
+<path d="M60 188 L16 188 L16 738 L60 738" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
+<path d="M44 179v18" stroke="#1D1D1F" stroke-width="2"/>
+<path d="M40 738L60 728M40 738L60 748M40 738L60 738" stroke="#1D1D1F" stroke-width="2" fill="none"/>
+<path d="M390 130 L440 130" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
+<path d="M406 121v18" stroke="#1D1D1F" stroke-width="2"/>
+<path d="M420 130L440 120M420 130L440 140M420 130L440 130" stroke="#1D1D1F" stroke-width="2" fill="none"/>
+<path d="M390 340 L440 340" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
+<path d="M406 331v18" stroke="#1D1D1F" stroke-width="2"/>
+<path d="M424 331v18" stroke="#1D1D1F" stroke-width="2"/>
+<path d="M390 165 L405 165 L405 600 L440 600" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
+<path d="M406 156v18" stroke="#1D1D1F" stroke-width="2"/>
 <path d="M420 600L440 590M420 600L440 610M420 600L440 600" stroke="#1D1D1F" stroke-width="2" fill="none"/>
-<path d="M360 230 L410 230 L410 760 L820 760" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
-<path d="M376 221v18" stroke="#1D1D1F" stroke-width="2"/>
+<path d="M390 200 L416 200 L416 760 L820 760" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
+<path d="M406 191v18" stroke="#1D1D1F" stroke-width="2"/>
 <path d="M800 760L820 750M800 760L820 770M800 760L820 760" stroke="#1D1D1F" stroke-width="2" fill="none"/>
-<path d="M740 130 L820 130" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
-<path d="M756 121v18" stroke="#1D1D1F" stroke-width="2"/>
-<path d="M800 130L820 120M800 130L820 140M800 130L820 130" stroke="#1D1D1F" stroke-width="2" fill="none"/>
-<path d="M590 70 L590 36 L1360 36 L1360 70" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
+<path d="M770 136 L820 136" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
+<path d="M786 127v18" stroke="#1D1D1F" stroke-width="2"/>
+<path d="M800 136L820 126M800 136L820 146M800 136L820 136" stroke="#1D1D1F" stroke-width="2" fill="none"/>
+<path d="M590 70 L590 36 L1370 36 L1370 70" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
 <path d="M581 54h18" stroke="#1D1D1F" stroke-width="2"/>
-<path d="M1360 50L1350 70M1360 50L1370 70M1360 50L1360 70" stroke="#1D1D1F" stroke-width="2" fill="none"/>
+<path d="M1370 50L1360 70M1370 50L1380 70M1370 50L1370 70" stroke="#1D1D1F" stroke-width="2" fill="none"/>
 <path d="M900 304 L900 360" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
 <path d="M891 320h18" stroke="#1D1D1F" stroke-width="2"/>
 <path d="M900 340L890 360M900 340L910 360M900 340L900 360" stroke="#1D1D1F" stroke-width="2" fill="none"/>
-<text x="1020" y="340" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">source_type = announcement</text>
-<path d="M1360 278 L1360 460 L1140 460" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
-<path d="M1351 294h18" stroke="#1D1D1F" stroke-width="2"/>
-<path d="M1160 460L1140 450M1160 460L1140 470M1160 460L1140 460" stroke="#1D1D1F" stroke-width="2" fill="none"/>
-<text x="1250" y="448" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">source_type = assignment</text>
+<text x="1020" y="338" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">source_type = announcement</text>
+<path d="M1370 278 L1370 460 L1160 460" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
+<path d="M1361 294h18" stroke="#1D1D1F" stroke-width="2"/>
+<path d="M1180 460L1160 450M1180 460L1160 470M1180 460L1160 460" stroke="#1D1D1F" stroke-width="2" fill="none"/>
+<text x="1260" y="448" font-size="12.5" font-weight="600" fill="#6E6E73" text-anchor="middle" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">source_type = assignment</text>
 <path d="M980 594 L980 650" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
 <path d="M971 610h18" stroke="#1D1D1F" stroke-width="2"/>
 <path d="M980 630L970 650M980 630L990 650M980 630L980 650" stroke="#1D1D1F" stroke-width="2" fill="none"/>
-<path d="M1140 720 L1200 720" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
-<path d="M1156 711v18" stroke="#1D1D1F" stroke-width="2"/>
+<path d="M1160 720 L1200 720" fill="none" stroke="#1D1D1F" stroke-width="1.8"/>
+<path d="M1176 711v18" stroke="#1D1D1F" stroke-width="2"/>
 <path d="M1184 711v18" stroke="#1D1D1F" stroke-width="2"/>
-<g transform="translate(-1140 320)">
-<rect x="1200" y="420" width="320" height="150" rx="14" fill="#F2F2F7" />
-<text x="1220" y="448" font-size="13" font-weight="700" fill="#6E6E73" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">표기</text>
-<path d="M1222 480h60" stroke="#1D1D1F" stroke-width="1.8"/><path d="M1234 471v18" stroke="#1D1D1F" stroke-width="2"/><path d="M1262 480L1282 470M1262 480L1282 490M1262 480L1282 480" stroke="#1D1D1F" stroke-width="2" fill="none"/>
-<text x="1300" y="485" font-size="13.5" font-weight="500" fill="#1D1D1F" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">1 : N  (하나가 여러 개를 가짐)</text>
-<path d="M1222 515h60" stroke="#1D1D1F" stroke-width="1.8"/><path d="M1234 506v18M1270 506v18" stroke="#1D1D1F" stroke-width="2"/>
-<text x="1300" y="520" font-size="13.5" font-weight="500" fill="#1D1D1F" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">1 : 1</text>
-<text x="1220" y="552" font-size="12.5" font-weight="500" fill="#6E6E73" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">PK 기본키 · FK 외래키 · 초안, 개발하며 조정</text>
-</g>
+<path d="M1200 846h60" stroke="#1D1D1F" stroke-width="1.8"/><path d="M1212 837v18" stroke="#1D1D1F" stroke-width="2"/><path d="M1240 846L1260 836M1240 846L1260 856M1240 846L1260 846" stroke="#1D1D1F" stroke-width="2" fill="none"/>
+<text x="1272" y="851" font-size="13" font-weight="600" fill="#3A3A3C" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">1 : N</text>
+<path d="M1330 846h60" stroke="#1D1D1F" stroke-width="1.8"/><path d="M1342 837v18M1378 837v18" stroke="#1D1D1F" stroke-width="2"/>
+<text x="1402" y="851" font-size="13" font-weight="600" fill="#3A3A3C" text-anchor="start" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">1 : 1</text>
+<text x="1540" y="851" font-size="12.5" font-weight="500" fill="#6E6E73" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">PK 기본키 · FK 외래키</text>
+<text x="1540" y="874" font-size="12" font-weight="500" fill="#9A9AA0" text-anchor="end" font-family="'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">users · auth_identities · password_credentials 는 PR #1 마이그레이션 그대로 · 세션 표는 라이브러리가 자동 생성 · 나머지는 초안</text>
 </svg>

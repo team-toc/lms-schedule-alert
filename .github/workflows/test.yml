@@ -1,0 +1,51 @@
+# PR · develop/feature push 때마다 backend 테스트를 돌린다. 실패하면 PR 에 빨간 체크.
+name: backend test
+
+on:
+  pull_request:
+    paths: ['backend/**', '.github/workflows/test.yml']
+  push:
+    branches: [develop, main, 'feature/**']
+    paths: ['backend/**', '.github/workflows/test.yml']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: lms_schedule_alert_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: lms_schedule_alert
+      TEST_DB_NAME: lms_schedule_alert_test
+      SESSION_SECRET: ci-only-session-secret-0123456789abcdef
+      FRONTEND_URL: http://localhost:5173
+      KAKAO_REST_API_KEY: ci-fake
+      KAKAO_CLIENT_SECRET: ci-fake
+      KAKAO_REDIRECT_URI: http://localhost:4000/api/auth/kakao/callback
+      GOOGLE_CLIENT_ID: ci-fake
+      GOOGLE_CLIENT_SECRET: ci-fake
+      GOOGLE_REDIRECT_URI: http://localhost:4000/api/auth/google/callback
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm test

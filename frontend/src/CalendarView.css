@@ -1,0 +1,480 @@
+/* 캘린더 화면 전용 스타일: 모든 선택자를 .calendar-view 하위로 제한
+   수치는 캘린더 시안(390px 폭 기준)에서 측정한 값, 색·글꼴은 홈 화면과 통일 */
+
+.calendar-view {
+  --cal-ink: #141820;
+  --cal-text: #1b1f27;
+  --cal-sub: #707886;
+  --cal-faint: #9ca3ae;
+  --cal-line: #f1f3f5;
+  --cal-blue: #4a62e1;
+  --cal-red: #bf3c32;
+  --cal-due: #aa4a23;
+  --cal-mine: #467d45;
+  --cal-other: #9aa1ac;
+  --cal-radius: 16px;
+
+  display: flex;
+  flex-direction: column;
+  /* .content(공통)의 좌우 17px 여백을 홈과 같은 16px로 맞춤 */
+  margin: -4px -1px 0;
+  min-width: 0;
+}
+
+.calendar-view button {
+  font: inherit;
+}
+
+.calendar-view button:focus-visible,
+.calendar-view input:focus-visible {
+  outline: 2px solid var(--cal-blue);
+  outline-offset: 2px;
+}
+
+/* ---------- 상단: 월 제목 + 이동 ---------- */
+.calendar-view .cal-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.calendar-view .cal-heading {
+  min-width: 0;
+  padding-left: 2px;
+}
+
+.calendar-view .cal-title {
+  margin: 0;
+  color: var(--cal-ink);
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  line-height: 34px;
+}
+
+.calendar-view .cal-subtitle {
+  margin: 5px 0 0;
+  color: var(--cal-sub);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.calendar-view .cal-nav {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: -4px;
+}
+
+.calendar-view .cal-nav-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #515967;
+  cursor: pointer;
+}
+
+.calendar-view .cal-nav-arrow svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.calendar-view .cal-nav-today {
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--cal-text);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.calendar-view .cal-nav-arrow:hover,
+.calendar-view .cal-nav-today:hover {
+  background: rgba(25, 29, 38, 0.05);
+}
+
+.calendar-view .cal-status {
+  margin: 0 4px 12px;
+  color: var(--cal-red);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+/* ---------- 월간 달력 카드 ---------- */
+.calendar-view .cal-card,
+.calendar-view .cal-list-card,
+.calendar-view .sm-card {
+  overflow: hidden;
+  background: #fff;
+  border-radius: var(--cal-radius);
+  box-shadow: 0 1px 3px rgba(31, 38, 52, 0.03);
+}
+
+.calendar-view .cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  padding: 12px 10px 0;
+}
+
+.calendar-view .cal-weekday {
+  margin-bottom: 6px;
+  color: #7f8591;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+  text-align: center;
+}
+
+.calendar-view .cal-weekday.is-sun {
+  color: var(--cal-red);
+}
+
+.calendar-view .cal-weekday.is-sat {
+  color: var(--cal-blue);
+}
+
+.calendar-view .cal-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  height: 48px;
+  padding: 3px 0 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--cal-text);
+  cursor: pointer;
+}
+
+.calendar-view .cal-day-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.calendar-view .cal-day.is-sun .cal-day-num {
+  color: var(--cal-red);
+}
+
+.calendar-view .cal-day.is-sat .cal-day-num {
+  color: var(--cal-blue);
+}
+
+.calendar-view .cal-day.is-selected .cal-day-num {
+  background: var(--cal-text);
+  color: #fff;
+  font-weight: 800;
+}
+
+.calendar-view .cal-day-dots {
+  display: flex;
+  gap: 3px;
+  height: 5px;
+  margin-top: 2.5px;
+}
+
+.calendar-view .cal-dot {
+  display: inline-block;
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--cal-other);
+}
+
+.calendar-view .cal-dot.is-due {
+  background: var(--cal-due);
+}
+
+.calendar-view .cal-dot.is-mine {
+  background: var(--cal-mine);
+}
+
+.calendar-view .cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 5px 10px 0;
+  padding: 8px 6px 11px;
+  border-top: 1px solid var(--cal-line);
+  color: #78808b;
+  font-size: 13px;
+  line-height: 16px;
+}
+
+.calendar-view .cal-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ---------- 선택 날짜 일정 ---------- */
+.calendar-view .cal-section,
+.calendar-view .schedule-manager {
+  min-width: 0;
+  margin-top: 31px;
+}
+
+.calendar-view .cal-section-head {
+  display: flex;
+  align-items: center;
+  height: 24px;
+  margin: 0 12px 13px 4px;
+}
+
+.calendar-view .cal-section-title,
+.calendar-view .sm-title {
+  margin: 0 0 0;
+  overflow: hidden;
+  color: var(--cal-ink);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 24px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.calendar-view .cal-section-count {
+  margin-left: 2px;
+  color: var(--cal-faint);
+  font-weight: 700;
+}
+
+.calendar-view .cal-empty {
+  margin: 0;
+  padding: 20px 18px;
+  color: var(--cal-sub);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.calendar-view .cal-list,
+.calendar-view .sm-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.calendar-view .cal-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 10.5px 18px;
+}
+
+.calendar-view .cal-item + .cal-item {
+  border-top: 1px solid var(--cal-line);
+}
+
+.calendar-view .cal-item-time {
+  flex: none;
+  width: 42px;
+  color: var(--cal-blue);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.calendar-view .cal-item-body,
+.calendar-view .sm-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.calendar-view .cal-item-title,
+.calendar-view .sm-item-title {
+  display: block;
+  overflow: hidden;
+  color: var(--cal-text);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  line-height: 20px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.calendar-view .cal-item-sub,
+.calendar-view .sm-item-time {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--cal-sub);
+  font-size: 13px;
+  line-height: 17px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ---------- 개인 일정 관리 (ScheduleManager) ---------- */
+.calendar-view .sm-title {
+  margin: 0 12px 13px 4px;
+}
+
+.calendar-view .sm-form {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.calendar-view .sm-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.calendar-view .sm-label {
+  color: var(--cal-sub);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 17px;
+}
+
+.calendar-view .sm-input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #e6e8ec;
+  border-radius: 10px;
+  background: #f7f8fa;
+  color: var(--cal-text);
+  font-size: 16px;
+}
+
+.calendar-view .sm-input::placeholder {
+  color: #a7adb8;
+}
+
+.calendar-view .sm-input:focus {
+  border-color: var(--cal-blue);
+  background: #fff;
+}
+
+.calendar-view .sm-time-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.calendar-view .sm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.calendar-view .sm-button {
+  flex: 1;
+  height: 42px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: #f0f1f3;
+  color: #2a2f3a;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.calendar-view .sm-button.is-primary {
+  background: var(--cal-blue);
+  color: #fff;
+}
+
+.calendar-view .sm-button.is-small {
+  flex: none;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 9px;
+  font-size: 13px;
+}
+
+.calendar-view .sm-button.is-danger {
+  color: var(--cal-red);
+}
+
+.calendar-view .sm-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.calendar-view .sm-error {
+  margin: -4px 16px 14px;
+  color: var(--cal-red);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.calendar-view .sm-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 10.5px 16px;
+  border-top: 1px solid var(--cal-line);
+}
+
+.calendar-view .sm-item-actions {
+  display: flex;
+  flex: none;
+  gap: 6px;
+}
+
+/* ---------- 작은 화면 ---------- */
+@media (max-width: 360px) {
+  .calendar-view .cal-title {
+    font-size: 24px;
+  }
+
+  .calendar-view .cal-nav-arrow {
+    width: 32px;
+  }
+
+  .calendar-view .cal-grid {
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+
+  .calendar-view .cal-day-num {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+
+  .calendar-view .cal-item {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .calendar-view .sm-time-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

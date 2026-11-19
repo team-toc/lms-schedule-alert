@@ -1,42 +1,427 @@
 #root {
-  max-width: 1280px;
+  min-height: 100vh;
+}
+
+.app {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100vh;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  background: #f3f4f7;
+  box-shadow: 0 12px 42px rgba(31, 41, 55, 0.07);
+  position: relative;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* 상단 헤더 */
+.header {
+  padding: 34px 22px 14px;
+  background: #f3f4f7;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+.header h1 {
+  margin: 0;
+  color: #171b24;
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -0.7px;
+}
+
+.header p {
+  margin: 6px 0 0;
+  color: #89909e;
+  font-size: 12px;
+}
+
+/* 하단 고정 메뉴: 현재 컴포넌트의 5개 메뉴를 모두 유지 */
+.navigation {
+  position: fixed;
+  z-index: 20;
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 2px;
+  width: min(calc(100% - 32px), 392px);
+  padding: 7px;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid #e9ebf0;
+  border-radius: 24px;
+  box-shadow: 0 8px 28px rgba(32, 39, 53, 0.15);
+}
+
+.navigation button {
+  min-width: 0;
+  padding: 12px 2px;
+  border: 0;
+  border-radius: 17px;
+  background: transparent;
+  color: #7c8595;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.navigation button.active {
+  background: #edf1ff;
+  color: #4b65e7;
+  font-weight: 800;
+}
+
+.navigation button:hover {
+  color: #405ad9;
+}
+
+.navigation button:focus-visible,
+.assignment-item:focus-visible,
+.notification-button:focus-visible {
+  outline: 2px solid #4d67eb;
+  outline-offset: 2px;
+}
+
+/* 화면 본문 */
+.content {
+  width: 100%;
+  margin: 0 auto;
+  padding: 12px 17px 112px;
+}
+
+.content h2 {
+  overflow-wrap: anywhere;
+  margin: 6px 3px 17px;
+  color: #202530;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.panel {
+  margin: 0 0 16px;
+  padding: 18px;
+  background: #fff;
+  border: 1px solid #edf0f4;
+  border-radius: 18px;
+  box-shadow: 0 3px 12px rgba(35, 41, 52, 0.025);
+}
+
+.panel h3 {
+  margin: 0 0 12px;
+  color: #232832;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.panel p {
+  margin: 6px 0;
+  color: #88909f;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.notification-item {
+  padding: 15px 0;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.notification-item:first-child {
+  padding-top: 2px;
+}
+
+.notification-item strong,
+.notification-button strong {
+  color: #242935;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.notification-item p,
+.notification-button span {
+  margin: 6px 0 0;
+  color: #8992a0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.notification-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.notification-button:hover strong {
+  color: #4a64e5;
+}
+
+.assignment-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 17px;
+  background: #fff;
+  border: 1px solid #edf0f4;
+  border-radius: 16px;
+  text-align: left;
+  font: inherit;
+  box-shadow: 0 3px 12px rgba(35, 41, 52, 0.025);
+  cursor: pointer;
+}
+
+.assignment-item:hover {
+  background: #f8faff;
+  border-color: #bbc7ff;
+}
+
+.assignment-item strong {
+  color: #242935;
+  font-size: 14px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.assignment-item span {
+  color: #8992a0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (min-width: 700px) {
+  .app {
+    min-height: 100vh;
   }
-  to {
-    transform: rotate(360deg);
+}
+
+@media (max-width: 360px) {
+  .content {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+  .navigation {
+    width: calc(100% - 18px);
+  }
+  .navigation button {
+    font-size: 11px;
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+/* 과제 상세: 목록으로 돌아가기 버튼 */
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: #edf1ff;
+  color: #4b65e7;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.back-button:hover {
+  background: #e2e8ff;
+}
+
+.back-button:focus-visible {
+  outline: 2px solid #4d67eb;
+  outline-offset: 2px;
+}
+/* ===== 공통 헤더 (Header.jsx: .app-header) ===== */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 14px 10px 20px;
+  background: #f3f4f7;
+}
+
+.app-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.app-header-logo {
+  flex: none;
+  display: block;
+  width: auto;
+  height: 22px;
+}
+
+.app-header-title {
+  margin: 0;
+  color: #191d26;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+}
+
+.app-header-title span {
+  color: #4b65e7;
+}
+
+.app-header-actions {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+
+.app-header-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #2a2f3a;
+  cursor: pointer;
+}
+
+.app-header-icon svg {
+  width: 23px;
+  height: 23px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.app-header-icon:hover:not(:disabled) {
+  background: rgba(25, 29, 38, 0.05);
+}
+
+.app-header-icon:disabled {
+  color: #b9bec8;
+  cursor: not-allowed;
+}
+
+.app-header-icon:focus-visible {
+  outline: 2px solid #4d67eb;
+  outline-offset: 2px;
+}
+
+/* ===== 하단 플로팅 내비게이션 (Navigation.jsx: .app-nav) ===== */
+.app-nav {
+  position: fixed;
+  z-index: 20;
+  left: 50%;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 2px;
+  width: min(calc(100% - 28px), 362px);
+  padding: 5px;
+  background: rgba(250, 250, 251, 0.9);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 33px;
+  box-shadow:
+    0 10px 30px rgba(28, 34, 48, 0.14),
+    0 1px 3px rgba(28, 34, 48, 0.06);
+}
+
+.app-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 53px;
+  padding: 6px 2px 5px;
+  border: 0;
+  border-radius: 27px;
+  background: transparent;
+  color: #646b78;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.app-nav-item svg {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.app-nav-item span {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.app-nav-item.active {
+  background: #fff;
+  color: #1b1f28;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(28, 34, 48, 0.1);
+}
+
+.app-nav-item.active svg {
+  stroke-width: 2.1;
+}
+
+.app-nav-item:not(.active):hover {
+  color: #2c3240;
+}
+
+.app-nav-item:focus-visible {
+  outline: 2px solid #4d67eb;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-nav-item {
+    transition: none;
   }
 }
 
-.card {
-  padding: 2em;
-}
+@media (max-width: 360px) {
+  .app-header {
+    padding-left: 16px;
+    padding-right: 10px;
+  }
 
-.read-the-docs {
-  color: #888;
+  .app-nav {
+    width: calc(100% - 16px);
+  }
+
+  .app-nav-item {
+    font-size: 10.5px;
+  }
 }
