@@ -10,6 +10,10 @@ const TOKEN = String.raw`(?:(오전|오후|낮|저녁|밤|아침|새벽)\s*)?(?:
 const FIRST_TOKEN = new RegExp(String.raw`(?<![\d:])(?:${TOKEN})`)
 const NEXT_TOKEN = new RegExp(String.raw`^\s*(?:~|〜|-|–|부터)\s*(?:${TOKEN})`)
 const PERIOD = /(?<!\d)(\d{1,2})\s*(?:[~\-–]\s*(\d{1,2})\s*)?교시/
+// 구절이 시각(시각 표현 · 교시)으로 시작하는지 — 날짜 뒤 쉼표 다음 구절을 같은 일정으로 묶을지 판단(ADR 0011, 2026-11-19)
+const STARTS_WITH_TIME = new RegExp(String.raw`^\s*(?:(?:${TOKEN})|\d{1,2}\s*(?:[~\-–]\s*\d{1,2}\s*)?교시)`)
+
+export const startsWithTime = (text) => STARTS_WITH_TIME.test(text)
 
 // 12시: 오전 · 아침 · 새벽은 0시, 밤은 그날 끝(24시), 그 밖은 정오
 const TWELVE = { 오전: 0, 아침: 0, 새벽: 0, 밤: 24 }
@@ -66,7 +70,7 @@ function clockTime(region, match) {
     return null
   }
   const end = rangeEnd(region.slice(match.index + match[0].length), start)
-  return { startMinutes: start.minutes, endMinutes: end ?? start.minutes + DEFAULT_MINUTES }
+  return { startMinutes: start.minutes, endMinutes: end ?? start.minutes + DEFAULT_MINUTES, ranged: end !== null }
 }
 
 const toMinutes = (hhmm) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5))
@@ -80,12 +84,21 @@ function periodTime(match, classPeriods) {
   return { startMinutes: toMinutes(from.start), endMinutes: toMinutes(to.end) }
 }
 
-// → { startMinutes, endMinutes } 또는 null(하루 종일). 교시가 시간표에 없으면 하루 종일
+// → { startMinutes, endMinutes } 또는 null(하루 종일). 교시가 시간표에 없으면 하루 종일.
+// 명시 시각 뒤에 교시가 같이 있으면("1시50분(6교시)") 명시 시각이 시작, 범위를 안 적었고 그 교시 끝이 시작보다 뒤면 끝 = 교시 끝(ADR 0011)
+// 명시 시각(범위 없음) + 뒤따르는 교시 → 끝을 교시 끝으로(교시 끝이 시작보다 뒤일 때만, 아니면 기본 1시간 그대로)
+function withLessonEnd(time, period, classPeriods) {
+  const lesson = time.ranged || !period ? null : periodTime(period, classPeriods)
+  const endMinutes = lesson && lesson.endMinutes > time.startMinutes ? lesson.endMinutes : time.endMinutes
+  return { startMinutes: time.startMinutes, endMinutes }
+}
+
 export function findTime(region, classPeriods) {
   const period = region.match(PERIOD)
   const clock = region.match(FIRST_TOKEN)
   if (period && (!clock || period.index <= clock.index)) {
     return periodTime(period, classPeriods)
   }
-  return clock ? clockTime(region, clock) : null
+  const time = clock ? clockTime(region, clock) : null
+  return time ? withLessonEnd(time, period, classPeriods) : null
 }

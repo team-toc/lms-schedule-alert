@@ -3,7 +3,7 @@
 // 지난 날짜 · 중복 · 상한은 추출기 밖(제안 단계)에서 거른다.
 import { parseDateOnly, seoulDate, seoulMidnight } from '../calendar/seoul-time.js'
 import { findDates, joinRanges } from './date-patterns.js'
-import { findTime } from './time-patterns.js'
+import { findTime, startsWithTime } from './time-patterns.js'
 
 const MINUTE_MS = 60 * 1000
 const DAY_MS = 24 * 60 * MINUTE_MS
@@ -12,7 +12,8 @@ const CONTEXT_BEFORE = 20
 const URL = /\b(?:https?:\/\/|www\.)\S+/gi
 const SEPARATOR = /[,;!?。]|\.(?=\s|$)/g
 const KINDS = [
-  ['exam', /중간고사|기말고사|쪽지\s*시험|시험|퀴즈|quiz|exam/gi],
+  // "평가" 한 낱말 · 강의평가는 시험이 아니다(2026-11-19): 시험 종류를 밝힌 평가만
+  ['exam', /중간고사|기말고사|쪽지\s*시험|시험|퀴즈|중간평가|기말평가|수시평가|실기평가|quiz|exam/gi],
   ['cancellation', /휴강|결강/g],
   ['makeup', /보강/g],
   ['deadline', /마감|제출|기한|\bdue\b/gi],
@@ -28,6 +29,17 @@ function clauseOf(separators, hit, length) {
   const before = separators.filter((i) => i < hit.index)
   const after = separators.find((i) => i >= hit.end)
   return { start: before.length ? before[before.length - 1] + 1 : 0, end: after ?? length }
+}
+
+// 날짜 구절이 쉼표로 끝나고 다음 구절이 시각으로 시작하면("일시: 11월 20일, 오후 3시") 그 구절까지 같은 일정으로 묶는다.
+// 한 번만 건너고, 그 사이에 다른 날짜가 있으면 묶지 않는다(시각은 뒤따르는 날짜 것). 묶지 않는 쉼표는 그대로 구절 경계 (ADR 0011, 2026-11-19)
+function extendOverComma(line, separators, clause, nextDate) {
+  if (line[clause.end] !== ',') {
+    return clause
+  }
+  const following = separators.find((i) => i > clause.end) ?? line.length
+  const end = Math.min(following, nextDate?.index ?? line.length)
+  return startsWithTime(line.slice(clause.end + 1, end)) ? { start: clause.start, end } : clause
 }
 
 // 날짜에 가장 가까운 종류 낱말
@@ -78,7 +90,7 @@ function lineCandidates(rawLine, { base, title, classPeriods }) {
   const dates = joinRanges(line, findDates(line, base))
   const separators = separatorsOf(line, dates)
   return dates.map((hit, i) => {
-    const clause = clauseOf(separators, hit, line.length)
+    const clause = extendOverComma(line, separators, clauseOf(separators, hit, line.length), dates[i + 1])
     const { near, kindArea } = areasOf(dates, i, clause)
     const time = hit.lastDate ? null : findTime(line.slice(hit.end, near.end), classPeriods)
     const kind = closestKind(line.slice(kindArea.start, kindArea.end), hit.index - kindArea.start, hit.end - kindArea.start) ?? closestKind(title, 0, 0) ?? 'other'
