@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import SuggestionList from './SuggestionList'
 import './NotificationList.css'
 
 const KIND_LABELS = {
@@ -181,7 +182,7 @@ export default function NotificationList() {
     setError('')
 
     try {
-      const query = onlyUnread ? '?unreadOnly=true' : ''
+      const query = onlyUnread ? '?unread=true' : '';
       const data = await apiRequest(`/api/notifications${query}`)
 
       setNotifications(data.notifications ?? [])
@@ -237,7 +238,7 @@ export default function NotificationList() {
 
     try {
       const params = new URLSearchParams({ cursor: nextCursor })
-      if (unreadOnly) params.set('unreadOnly', 'true')
+      if (unreadOnly) params.set('unread', 'true')
 
       const data = await apiRequest(`/api/notifications?${params}`)
       setNotifications((items) => [...items, ...(data.notifications ?? [])])
@@ -294,6 +295,8 @@ export default function NotificationList() {
       </div>
 
       {error && <p role="alert" className="noti-error">{error}</p>}
+
+      <SuggestionList />
 
       <section className="noti-section">
         <h2 className="noti-section-title">
