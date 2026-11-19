@@ -232,7 +232,7 @@ export default function HomeDashboard({ onOpenCalendar, onOpenNotifications }) {
 
     async function loadChanges() {
       try {
-        const response = await fetch('/api/notifications?unreadOnly=true', {
+        const response = await fetch('/api/notifications?unread=true', {
           credentials: 'include',
           signal: controller.signal,
         })
@@ -268,6 +268,9 @@ export default function HomeDashboard({ onOpenCalendar, onOpenNotifications }) {
 
   const todayEvents = events
     .filter((event) => {
+      if (event.isAllDay && event.startDate && event.endDate) {
+        return event.startDate <= today && today < event.endDate
+      }
       const time = event.dueAt ?? event.startAt
       return time && seoulDate(time) === today
     })
@@ -347,7 +350,7 @@ export default function HomeDashboard({ onOpenCalendar, onOpenNotifications }) {
                   key={`${event.source}-${event.id}`}
                 >
                   <span className="home-today-time">
-                    {formatClock(event.dueAt ?? event.startAt)}
+                    {event.isAllDay ? '종일' : formatClock(event.dueAt ?? event.startAt)}
                   </span>
                   <span className="home-today-body">
                     <strong className="home-item-title">{event.title}</strong>

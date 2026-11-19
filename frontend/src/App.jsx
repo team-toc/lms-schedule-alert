@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react'
 import Header from './components/Header'
 import Navigation from './components/Navigation'
 import NotificationList from './components/NotificationList'
-import AssignmentList from './components/AssignmentList'
-import AssignmentDetail from './components/AssignmentDetail'
 import Login from './features/auth/login'
 import { fetchCurrentUser, logout } from './features/auth/authApi'
 import CalendarView from './CalendarView'
@@ -12,11 +10,8 @@ import AssignmentPage from './AssignmentPage'
 import HomeDashboard from './HomeDashboard'
 import './App.css'
 
-const assignments = []
-
 function App() {
   const [activeMenu, setActiveMenu] = useState('홈')
-  const [selectedId, setSelectedId] = useState(null)
   const [authStatus, setAuthStatus] = useState('checking')
   const [user, setUser] = useState(null)
   const [authError, setAuthError] = useState('')
@@ -48,18 +43,34 @@ function App() {
     }
   }, [sessionCheckCount])
 
-  const selectedAssignment = assignments.find(
-    (assignment) => assignment.id === selectedId
-  )
+  // 세션 만료: 로그인 후 /api/* (인증 API 제외)가 401이면 로그인 화면으로 돌아간다
+  useEffect(() => {
+    const originalFetch = window.fetch
+
+    window.fetch = async (input, init) => {
+      const response = await originalFetch(input, init)
+      const url = typeof input === 'string' ? input : input?.url ?? String(input)
+      const path = new URL(url, window.location.origin).pathname
+
+      if (
+        response.status === 401 &&
+        path.startsWith('/api/') &&
+        !path.startsWith('/api/auth/')
+      ) {
+        setUser(null)
+        setAuthStatus('unauthenticated')
+      }
+
+      return response
+    }
+
+    return () => {
+      window.fetch = originalFetch
+    }
+  }, [])
 
   function handleMenuChange(menu) {
     setActiveMenu(menu)
-    setSelectedId(null)
-  }
-
-    function handleNotificationSelect(assignmentId) {
-    setSelectedId(assignmentId)
-    setActiveMenu('과제')
   }
 
   function handleRetrySessionCheck() {
@@ -70,7 +81,6 @@ function App() {
   function handleLogin(loggedInUser) {
     setUser(loggedInUser)
     setActiveMenu('홈')
-    setSelectedId(null)
     setAuthStatus('authenticated')
   }
 
@@ -151,10 +161,7 @@ function App() {
         )}
 
         {activeMenu === '알림' && (
-          <NotificationList
-            assignments={assignments}
-            onSelectAssignment={handleNotificationSelect}
-          />
+          <NotificationList />
         )}
 
         {activeMenu === '과제' && <AssignmentPage />}

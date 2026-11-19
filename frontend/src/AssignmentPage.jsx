@@ -90,7 +90,7 @@ export default function AssignmentPage() {
   if (selected) {
     return (
       <section className="panel">
-        <button type="button" onClick={() => setSelected(null)}>
+        <button type="button" className="back-button" onClick={() => setSelected(null)}>
           ← 목록으로
         </button>
 
@@ -109,7 +109,7 @@ export default function AssignmentPage() {
 
   return (
     <section className="panel">
-      <h2>실제 LMS 과제 목록</h2>
+      <h2>과제 목록</h2>
 
       {loading && <p>과제를 불러오는 중...</p>}
       {error && <p role="alert">{error}</p>}

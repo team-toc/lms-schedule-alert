@@ -159,7 +159,9 @@ export default function ScheduleManager({ date, events, onChanged }) {
                 <span className="sm-item-body">
                   <strong className="sm-item-title">{schedule.title}</strong>
                   <span className="sm-item-time">
-                    {timeInSeoul(schedule.startAt)} ~ {timeInSeoul(schedule.endAt)}
+                    {schedule.isAllDay
+                      ? '하루 종일'
+                      : `${timeInSeoul(schedule.startAt)} ~ ${timeInSeoul(schedule.endAt)}`}
                   </span>
                 </span>
                 <span className="sm-item-actions">
@@ -167,7 +169,8 @@ export default function ScheduleManager({ date, events, onChanged }) {
                     type="button"
                     className="sm-button is-small"
                     onClick={() => edit(schedule)}
-                    disabled={busy}
+                    disabled={busy || schedule.isAllDay}
+                    title={schedule.isAllDay ? '하루 종일 일정은 이 화면에서 시간을 수정할 수 없어요' : undefined}
                   >
                     수정
                   </button>

@@ -36,6 +36,12 @@ function describeStatus(status) {
       return { label: '연결됨', tone: 'success', description: 'Canvas LMS와 연결되어 있어요.' }
     case 'syncing':
       return { label: '동기화 중', tone: 'info', description: 'Canvas 데이터를 동기화하고 있어요.' }
+    case 'failing':
+      return {
+        label: '동기화 실패',
+        tone: 'warning',
+        description: 'Canvas 연결이 잠시 안 돼요. 자동으로 다시 시도하며, 그동안 마지막으로 불러온 자료를 보여드려요.',
+      }
     case 'needs_reauth':
       return {
         label: '토큰 재등록 필요',
@@ -121,7 +127,14 @@ export default function CanvasSettings() {
 
   const connected = status && status.status !== 'not_connected'
 
-  const statusInfo = describeStatus(status)
+  // 첫 상태 조회가 실패하면 '확인 중'에 머무르지 않고 실패를 표시
+  const statusInfo = status === null && error
+    ? {
+        label: '확인 실패',
+        tone: 'warning',
+        description: '연결 상태를 불러오지 못했어요. 연결 상태 새로고침을 눌러 주세요.',
+      }
+    : describeStatus(status)
 
   return (
     <section className="canvas-settings">
