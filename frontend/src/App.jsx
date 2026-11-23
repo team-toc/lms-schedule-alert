@@ -6,6 +6,8 @@ import Login from './features/auth/login'
 import { fetchCurrentUser, logout } from './features/auth/authApi'
 import CalendarView from './CalendarView'
 import CanvasSettings from './CanvasSettings'
+import PushSettings from './features/push/PushSettings'
+import { disablePushNotifications } from './features/push/pushApi'
 import AssignmentPage from './AssignmentPage'
 import HomeDashboard from './HomeDashboard'
 import './App.css'
@@ -87,6 +89,8 @@ function App() {
   async function handleLogout() {
     setLogoutError('')
     setIsLoggingOut(true)
+
+    await disablePushNotifications().catch(() => {})
 
     const result = await logout()
 
@@ -194,6 +198,8 @@ function App() {
             </section>
 
             <CanvasSettings />
+
+            <PushSettings />
 
             <section className="settings-section">
               <h3 className="settings-section-title">계정 관리</h3>
