@@ -7,13 +7,17 @@ import { fetchCurrentUser, logout } from './features/auth/authApi'
 import CalendarView from './CalendarView'
 import CanvasSettings from './CanvasSettings'
 import PushSettings from './features/push/PushSettings'
-import { disablePushNotifications } from './features/push/pushApi'
+import { disablePushNotifications, syncPushSubscription } from './features/push/pushApi'
 import AssignmentPage from './AssignmentPage'
 import HomeDashboard from './HomeDashboard'
 import './App.css'
 
 function App() {
-  const [activeMenu, setActiveMenu] = useState('홈')
+  const [activeMenu, setActiveMenu] = useState(() =>
+    new URLSearchParams(window.location.search).get('view') === 'notifications'
+      ? '알림'
+      : '홈'
+  )
   const [authStatus, setAuthStatus] = useState('checking')
   const [user, setUser] = useState(null)
   const [authError, setAuthError] = useState('')
@@ -71,6 +75,11 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    if (authStatus === 'authenticated') {
+      syncPushSubscription().catch(() => {})
+    }
+  }, [authStatus])
   function handleMenuChange(menu) {
     setActiveMenu(menu)
   }
@@ -82,7 +91,11 @@ function App() {
 
   function handleLogin(loggedInUser) {
     setUser(loggedInUser)
-    setActiveMenu('홈')
+    setActiveMenu(
+      new URLSearchParams(window.location.search).get('view') === 'notifications'
+        ? '알림'
+        : '홈'
+    )
     setAuthStatus('authenticated')
   }
 

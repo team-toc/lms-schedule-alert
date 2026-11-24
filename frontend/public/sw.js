@@ -1,4 +1,4 @@
-﻿const FALLBACK = {
+const FALLBACK = {
   title: 'TOC 일정 알림',
   body: '새로운 알림을 확인해 주세요.',
   url: '/?view=notifications'
@@ -22,6 +22,7 @@ self.addEventListener('push', (event) => {
       tag: valid
         ? (data.notificationId != null ? `n${data.notificationId}` : data.kind || 'toc')
         : 'toc-fallback',
+      renotify: true,
       data: {
         url: valid && typeof data.url === 'string' ? data.url : FALLBACK.url
       }
@@ -60,3 +61,7 @@ self.addEventListener('notificationclick', (event) => {
     }
   })());
 });
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim())
+})

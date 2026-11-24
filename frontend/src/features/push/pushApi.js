@@ -15,7 +15,9 @@ async function api(path, options = {}) {
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({}))
-    throw new Error(data.message || `푸시 알림 요청 실패 (${response.status})`)
+    const error = new Error(data.message || `푸시 알림 요청 실패 (${response.status})`)
+    error.status = response.status
+    throw error
   }
 
   return response.status === 204
@@ -109,7 +111,9 @@ export async function disablePushNotifications() {
       body: JSON.stringify({ endpoint: subscription.endpoint }),
     })
   } catch (error) {
-    serverError = error
+    if (error.status !== 404) {
+      serverError = error
+    }
   }
 
   const unsubscribed = await subscription.unsubscribe()
@@ -121,4 +125,26 @@ export async function disablePushNotifications() {
   if (serverError) {
     throw serverError
   }
+}
+
+export async function syncPushSubscription() {
+  if (!window.isSecureContext ||
+      !('serviceWorker' in navigator) ||
+      !('PushManager' in window) ||
+      !('Notification' in window)) {
+    return
+  }
+
+  if (Notification.permission !== 'granted') return
+
+  const registration = await navigator.serviceWorker.getRegistration('/')
+  const subscription = await registration?.pushManager.getSubscription()
+
+  if (!subscription) return
+
+  await api('/api/push/subscriptions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(subscription.toJSON()),
+  })
 }
